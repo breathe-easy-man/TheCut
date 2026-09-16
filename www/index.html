@@ -599,13 +599,28 @@
   function bridge() { return plugin('WidgetBridge'); }
 
   var stepState = { available: null, permitted: null };
+  var stepTimer = null;
+
+  /* The sensor hub keeps counting with the app shut, and launch/resume reads pick that up. But
+     nothing re-read it while the app was OPEN, so walking with theCut in the foreground showed a
+     frozen number. Poll while visible, stop the moment we are backgrounded — there is nothing to
+     update off-screen and the resume read covers the gap. 10s is under the threshold where a
+     glance feels broken and well over the cost of an on-change sensor read. */
+  function startStepPolling() {
+    stopStepPolling();
+    if (!settings.autoSteps) return;
+    stepTimer = setInterval(syncSteps, 10000);
+  }
+  function stopStepPolling() {
+    if (stepTimer) { clearInterval(stepTimer); stepTimer = null; }
+  }
 
   function enableAutoSteps() {
     var SC = plugin('StepCounter');
     if (!SC) { renderSettings(); return; }
     SC.request().then(function(r) {
       if (r) stepState = { available: !!r.available, permitted: !!r.permitted };
-      if (r && r.available && r.permitted) syncSteps();
+      if (r && r.available && r.permitted) { syncSteps(); startStepPolling(); }
       renderSettings();
     }).catch(function() { renderSettings(); });
   }
@@ -745,10 +760,16 @@
     } else {
       hint.textContent = 'Below baseline, target lowered by ' + Math.abs(bonus) + ' cal.';
     }
-    if (settings.autoSteps && currentDate === todayStr() && stepState.available !== false) {
-      hint.textContent += day.stepsManual
-        ? ' Typed by hand — clear the field to go back to counting automatically.'
-        : ' Counted automatically.';
+    if (settings.autoSteps && currentDate === todayStr()) {
+      if (stepState.available === false) {
+        hint.textContent += ' This phone has no step sensor, so steps stay manual.';
+      } else if (stepState.permitted === false) {
+        hint.textContent += ' Physical activity permission is not granted — see Settings.';
+      } else if (day.stepsManual) {
+        hint.textContent += ' Typed by hand — clear the field to go back to counting automatically.';
+      } else {
+        hint.textContent += ' Counting automatically. Only steps taken since you first opened the app today are counted.';
+      }
     }
 
     var list = document.getElementById('mealList');
@@ -877,7 +898,11 @@
     } else if (stepState.permitted === false) {
       ah.textContent = 'Physical activity permission was declined. Switch this off and on again to ask for it.';
     } else {
-      ah.textContent = 'Reading the phone\u2019s own step counter each time you open the app. Anything you type on the Today tab wins for that day.';
+      ah.textContent = 'On — reading the phone\u2019s own step counter, and again every 10 seconds while the app is open. '
+        + (stepState.available === null
+            ? 'Waiting for the first reading\u2026'
+            : 'Sensor reading fine.')
+        + ' Anything you type on the Today tab wins for that day.';
     }
 
     var m = C.maintenanceCal(settings, lw);
@@ -984,7 +1009,10 @@
     settings[k] = (el.type === 'checkbox') ? el.checked : el.value;
     save();
     if (k === 'autoSteps' && settings.autoSteps) enableAutoSteps();
-    else renderSettings();
+    else {
+      if (k === 'autoSteps') stopStepPolling();
+      renderSettings();
+    }
   });
 
   document.getElementById('addBtn').addEventListener('click', function() {
@@ -1086,9 +1114,10 @@
   }
 
   document.addEventListener('visibilitychange', function() {
-    if (document.hidden) return;
+    if (document.hidden) { stopStepPolling(); return; }
     checkWidgetAction();
     syncSteps();
+    startStepPolling();
   });
 
   /* ---- backup ---- */
@@ -1159,6 +1188,7 @@
   syncWidget();
   checkWidgetAction();
   syncSteps();
+  startStepPolling();
 })();
 </script>
 </body>
