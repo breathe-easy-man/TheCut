@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body { margin:0; background:#eef0f3; font-family:'IBM Plex Sans', system-ui, sans-serif; color:#111827; font-feature-settings:'tnum'; }
+a { color:#f97316; } a:hover { color:#ea580c; }
+input, button, textarea { font-family:inherit; } *, *::before, *::after { box-sizing:border-box; }
+</style>
+</helmet>
+<section style="padding:48px; display:flex; flex-direction:column; gap:24px;">
+  <div style="display:flex; align-items:baseline; gap:12px;">
+    <span style="font-size:12px; font-weight:600; letter-spacing:.08em; color:#6b7280; text-transform:uppercase;">Turn 1</span>
+    <span style="font-size:14px; color:#6b7280;">Daily Tracker — Today · Meals · Progress · Settings sheet</span>
+  </div>
+  <div style="display:flex; flex-wrap:wrap; gap:40px; align-items:flex-start;">
+
+  <!-- ===== TODAY ===== -->
+  <div id="1a" data-screen-label="Today" style="position:relative; width:390px; height:844px; background:#ffffff; border:1px solid #e5e7eb; border-radius:32px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(17,24,39,.08);">
+    <span style="position:absolute; top:14px; left:16px; z-index:3; font-size:10px; font-weight:700; padding:3px 7px; border-radius:6px; background:#111827; color:#fff;">1a</span>
+    <div style="flex:1; overflow-y:auto; padding:56px 20px 110px; display:flex; flex-direction:column; gap:20px;">
+      <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 0; border-radius:14px;"><span style="font-size:11px; color:#6b7280; font-weight:500;">Thu</span><span style="font-size:15px; font-weight:600;">10</span><span style="width:4px; height:4px; border-radius:50%; background:#10b981;"></span></div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 0; border-radius:14px;"><span style="font-size:11px; color:#6b7280; font-weight:500;">Fri</span><span style="font-size:15px; font-weight:600;">11</span><span style="width:4px; height:4px; border-radius:50%; background:#10b981;"></span></div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 0; border-radius:14px;"><span style="font-size:11px; color:#6b7280; font-weight:500;">Sat</span><span style="font-size:15px; font-weight:600;">12</span><span style="width:4px; height:4px; border-radius:50%; background:#10b981;"></span></div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 0; border-radius:14px;"><span style="font-size:11px; color:#6b7280; font-weight:500;">Sun</span><span style="font-size:15px; font-weight:600;">13</span><span style="width:4px; height:4px; border-radius:50%; background:#e5e7eb;"></span></div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 0; border-radius:14px;"><span style="font-size:11px; color:#6b7280; font-weight:500;">Mon</span><span style="font-size:15px; font-weight:600;">14</span><span style="width:4px; height:4px; border-radius:50%; background:#10b981;"></span></div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 0; border-radius:14px;"><span style="font-size:11px; color:#6b7280; font-weight:500;">Tue</span><span style="font-size:15px; font-weight:600;">15</span><span style="width:4px; height:4px; border-radius:50%; background:#f97316;"></span></div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 0; border-radius:14px; background:#111827; color:#fff;"><span style="font-size:11px; color:#d1d5db; font-weight:500;">Wed</span><span style="font-size:15px; font-weight:600;">16</span><span style="width:4px; height:4px; border-radius:50%; background:#f97316;"></span></div>
+      </div>
+
+      <div style="border:1px solid #e5e7eb; border-radius:20px; padding:20px; display:flex; flex-direction:column; gap:18px;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline;">
+            <span style="font-size:13px; font-weight:600; color:#6b7280;">Calories</span>
+            <span style="flex:none; white-space:nowrap; font-size:13px; color:#6b7280;">{{ calLeft }} left</span>
+          </div>
+          <div style="display:flex; align-items:baseline; gap:6px; margin-top:4px;">
+            <span style="font-size:40px; font-weight:700; letter-spacing:-.03em; line-height:1;">1,840</span>
+            <span style="font-size:15px; color:#6b7280;">/ {{ calTarget }}</span>
+          </div>
+          <div style="height:10px; background:#f3f4f6; border-radius:6px; margin-top:12px; overflow:hidden;">
+            <div style="height:100%; width:{{ calPct }}; background:#f97316; border-radius:6px;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline;">
+            <span style="font-size:13px; font-weight:600; color:#6b7280;">Protein</span>
+            <span style="font-size:13px; color:#6b7280;">48g left</span>
+          </div>
+          <div style="display:flex; align-items:baseline; gap:6px; margin-top:4px;">
+            <span style="font-size:24px; font-weight:700; letter-spacing:-.02em; line-height:1;">142g</span>
+            <span style="font-size:13px; color:#6b7280;">/ 190g</span>
+          </div>
+          <div style="height:6px; background:#f3f4f6; border-radius:6px; margin-top:10px; overflow:hidden;">
+            <div style="height:100%; width:75%; background:#111827; border-radius:6px;"></div>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+          <button onClick="{{ toggleDayType }}" style="text-align:left; border:none; background:{{ workoutBg }}; color:{{ workoutFg }}; border-radius:14px; padding:12px 14px; cursor:pointer; font-family:inherit;">
+            <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; opacity:.8;">Workout</div>
+            <div style="font-size:20px; font-weight:700; margin-top:4px;">{{ workoutMark }}</div>
+            <div style="font-size:11px; font-weight:600; margin-top:2px; opacity:.85;">{{ workoutLabel }}</div>
+          </button>
+          <div style="background:#f9fafb; border-radius:14px; padding:12px 14px;">
+            <div style="font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.06em;">Steps</div>
+            <div style="font-size:20px; font-weight:700; margin-top:4px;">6,400</div>
+            <div style="font-size:11px; color:#f97316; font-weight:600; margin-top:2px;">+{{ stepBonus }} cal to target</div>
+          </div>
+          <div style="background:#f9fafb; border-radius:14px; padding:12px 14px;">
+            <div style="font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.06em;">Weight</div>
+            <div style="font-size:20px; font-weight:700; margin-top:4px;">98.4 <span style="font-size:12px; color:#6b7280; font-weight:500;">kg</span></div>
+            <div style="font-size:11px; color:#6b7280; margin-top:2px;">−0.3 vs yesterday</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:15px; font-weight:700;">Meals</span>
+          <a href="#1b" style="font-size:13px; font-weight:600; color:#f97316; text-decoration:none;">See all</a>
+        </div>
+        <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:2px;">
+          <span style="flex:none; font-size:12px; font-weight:500; padding:8px 12px; border-radius:999px; border:1px dashed #d1d5db; color:#374151;">+ Greek yogurt · 180</span>
+          <span style="flex:none; font-size:12px; font-weight:500; padding:8px 12px; border-radius:999px; border:1px dashed #d1d5db; color:#374151;">+ Chicken &amp; rice · 620</span>
+          <span style="flex:none; font-size:12px; font-weight:500; padding:8px 12px; border-radius:999px; border:1px dashed #d1d5db; color:#374151;">+ Protein shake · 210</span>
+        </div>
+        <div style="display:flex; flex-direction:column; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #f3f4f6;"><div><div style="font-size:14px; font-weight:600;">Oats, whey, banana</div><div style="font-size:12px; color:#6b7280; margin-top:2px;">Breakfast · 08:10</div></div><div style="text-align:right;"><div style="font-size:14px; font-weight:600;">540</div><div style="font-size:12px; color:#6b7280;">38g</div></div></div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #f3f4f6;"><div><div style="font-size:14px; font-weight:600;">Chicken &amp; rice</div><div style="font-size:12px; color:#6b7280; margin-top:2px;">Lunch · 13:05</div></div><div style="text-align:right;"><div style="font-size:14px; font-weight:600;">620</div><div style="font-size:12px; color:#6b7280;">52g</div></div></div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px;"><div><div style="font-size:14px; font-weight:600;">Greek yogurt, berries</div><div style="font-size:12px; color:#6b7280; margin-top:2px;">Snack · 16:30</div></div><div style="text-align:right;"><div style="font-size:14px; font-weight:600;">180</div><div style="font-size:12px; color:#6b7280;">18g</div></div></div>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; border:1px solid #e5e7eb; border-radius:16px;">
+        <div style="flex:1;"><div style="font-size:14px; font-weight:600;">Finish day</div><div style="font-size:12px; color:#6b7280; margin-top:2px;">Counts toward progress</div></div>
+        <div style="width:46px; height:28px; border-radius:14px; background:#e5e7eb; position:relative;"><div style="position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.2);"></div></div>
+      </div>
+    </div>
+    <button style="position:absolute; right:20px; bottom:96px; width:56px; height:56px; border-radius:50%; border:none; background:#f97316; color:#fff; font-size:28px; line-height:1; box-shadow:0 8px 24px rgba(249,115,22,.4); cursor:pointer;">+</button>
+    <div style="position:absolute; left:0; right:0; bottom:0; height:84px; background:rgba(255,255,255,.92); backdrop-filter:blur(12px); border-top:1px solid #e5e7eb; display:grid; grid-template-columns:repeat(4,1fr); padding:12px 8px 24px;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:600; color:#f97316;"><span style="width:22px; height:22px; border-radius:7px; background:#f97316;"></span>Today</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:500; color:#9ca3af;"><span style="width:22px; height:22px; border-radius:7px; border:2px solid #d1d5db;"></span>Meals</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:500; color:#9ca3af;"><span style="width:22px; height:22px; border-radius:7px; border:2px solid #d1d5db;"></span>Progress</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:500; color:#9ca3af;"><span style="width:22px; height:22px; border-radius:7px; border:2px solid #d1d5db;"></span>Settings</div>
+    </div>
+  </div>
+
+  <!-- ===== MEALS ===== -->
+  <div id="1b" data-screen-label="Meals" style="position:relative; width:390px; height:844px; background:#ffffff; border:1px solid #e5e7eb; border-radius:32px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(17,24,39,.08);">
+    <span style="position:absolute; top:14px; left:16px; z-index:3; font-size:10px; font-weight:700; padding:3px 7px; border-radius:6px; background:#111827; color:#fff;">1b</span>
+    <div style="flex:1; overflow-y:auto; padding:56px 20px 110px; display:flex; flex-direction:column; gap:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+        <div>
+          <div style="font-size:12px; font-weight:600; letter-spacing:.08em; color:#6b7280; text-transform:uppercase;">Meals</div>
+          <div style="font-size:28px; font-weight:700; letter-spacing:-.02em; line-height:1.1; margin-top:4px;">Wed, 16 Sep</div>
+        </div>
+        <div style="text-align:right;"><div style="font-size:20px; font-weight:700; letter-spacing:-.02em;">1,840</div><div style="font-size:12px; color:#6b7280;">cal · 142g protein</div></div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="font-size:12px; font-weight:600; letter-spacing:.06em; color:#6b7280; text-transform:uppercase;">Quick add</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <button style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:12px 14px; border-radius:14px; border:1px solid #e5e7eb; background:#fff; text-align:left; cursor:pointer;"><span><span style="display:block; font-size:13px; font-weight:600;">Protein shake</span><span style="display:block; font-size:11px; color:#6b7280;">210 · 40g</span></span><span style="width:24px; height:24px; border-radius:50%; background:#fff7ed; color:#f97316; font-weight:700; display:grid; place-items:center; font-size:16px; flex:none;">+</span></button>
+          <button style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:12px 14px; border-radius:14px; border:1px solid #e5e7eb; background:#fff; text-align:left; cursor:pointer;"><span><span style="display:block; font-size:13px; font-weight:600;">Salmon &amp; potatoes</span><span style="display:block; font-size:11px; color:#6b7280;">710 · 46g</span></span><span style="width:24px; height:24px; border-radius:50%; background:#fff7ed; color:#f97316; font-weight:700; display:grid; place-items:center; font-size:16px; flex:none;">+</span></button>
+          <button style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:12px 14px; border-radius:14px; border:1px solid #e5e7eb; background:#fff; text-align:left; cursor:pointer;"><span><span style="display:block; font-size:13px; font-weight:600;">Eggs on toast</span><span style="display:block; font-size:11px; color:#6b7280;">430 · 28g</span></span><span style="width:24px; height:24px; border-radius:50%; background:#fff7ed; color:#f97316; font-weight:700; display:grid; place-items:center; font-size:16px; flex:none;">+</span></button>
+          <button style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:12px 14px; border-radius:14px; border:1px solid #e5e7eb; background:#fff; text-align:left; cursor:pointer;"><span><span style="display:block; font-size:13px; font-weight:600;">Cottage cheese</span><span style="display:block; font-size:11px; color:#6b7280;">160 · 22g</span></span><span style="width:24px; height:24px; border-radius:50%; background:#fff7ed; color:#f97316; font-weight:700; display:grid; place-items:center; font-size:16px; flex:none;">+</span></button>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="font-size:12px; font-weight:600; letter-spacing:.06em; color:#6b7280; text-transform:uppercase;">Logged today</div>
+        <div style="display:flex; flex-direction:column; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #f3f4f6;"><div><div style="font-size:14px; font-weight:600;">Oats, whey, banana</div><div style="font-size:12px; color:#6b7280; margin-top:2px;">Breakfast · 08:10</div></div><div style="text-align:right;"><div style="font-size:14px; font-weight:600;">540</div><div style="font-size:12px; color:#6b7280;">38g</div></div></div>
+
+          <div style="position:relative; overflow:hidden; border-bottom:1px solid #f3f4f6; background:#ef4444;">
+            <div style="position:absolute; right:0; top:0; bottom:0; width:80px; display:grid; place-items:center; color:#fff; font-size:13px; font-weight:600;">Delete</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px 14px 96px; background:#fff; transform:translateX(-80px); box-shadow:2px 0 8px rgba(0,0,0,.08);"><div><div style="font-size:14px; font-weight:600;">Chicken &amp; rice</div><div style="font-size:12px; color:#6b7280; margin-top:2px;">Lunch · 13:05</div></div><div style="text-align:right;"><div style="font-size:14px; font-weight:600;">620</div><div style="font-size:12px; color:#6b7280;">52g</div></div></div>
+          </div>
+
+          <div style="padding:14px 16px; background:#fff7ed; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:11px; font-weight:600; letter-spacing:.06em; color:#c2410c; text-transform:uppercase;">Editing</span><span style="font-size:12px; color:#6b7280;">Snack · 16:30</span></div>
+            <input value="Greek yogurt, berries" style="width:100%; padding:11px 12px; border:1px solid #fdba74; border-radius:10px; font-size:14px; font-weight:600; background:#fff; color:#111827; outline:none;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div style="display:flex; align-items:center; min-width:0; border:1px solid #e5e7eb; border-radius:10px; background:#fff; padding:0 12px;"><input value="180" style="flex:1; min-width:0; width:0; border:none; padding:11px 0; font-size:14px; font-weight:600; background:transparent; outline:none;"><span style="font-size:12px; color:#6b7280;">cal</span></div>
+              <div style="display:flex; align-items:center; min-width:0; border:1px solid #e5e7eb; border-radius:10px; background:#fff; padding:0 12px;"><input value="18" style="flex:1; min-width:0; width:0; border:none; padding:11px 0; font-size:14px; font-weight:600; background:transparent; outline:none;"><span style="font-size:12px; color:#6b7280;">g</span></div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button style="flex:1; padding:11px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; font-size:13px; font-weight:600; color:#374151; cursor:pointer;">Cancel</button>
+              <button style="flex:1; padding:11px; border-radius:10px; border:none; background:#111827; color:#fff; font-size:13px; font-weight:600; cursor:pointer;">Save</button>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:12px; color:#9ca3af; text-align:center;">Swipe left to delete · tap to edit</div>
+      </div>
+    </div>
+
+    <div style="position:absolute; left:0; right:0; bottom:84px; padding:12px 16px; background:#fff; border-top:1px solid #e5e7eb; display:flex; gap:8px; align-items:center;">
+      <input placeholder="Add a meal…" style="flex:1; min-width:0; padding:13px 14px; border:1px solid #e5e7eb; border-radius:14px; font-size:14px; background:#f9fafb; outline:none;">
+      <input placeholder="cal" style="width:64px; padding:13px 10px; border:1px solid #e5e7eb; border-radius:14px; font-size:14px; background:#f9fafb; outline:none; text-align:center;">
+      <input placeholder="g" style="width:56px; padding:13px 10px; border:1px solid #e5e7eb; border-radius:14px; font-size:14px; background:#f9fafb; outline:none; text-align:center;">
+      <button style="width:46px; height:46px; flex:none; border-radius:14px; border:none; background:#f97316; color:#fff; font-size:22px; cursor:pointer;">↑</button>
+    </div>
+    <div style="position:absolute; left:0; right:0; bottom:0; height:84px; background:rgba(255,255,255,.92); backdrop-filter:blur(12px); border-top:1px solid #e5e7eb; display:grid; grid-template-columns:repeat(4,1fr); padding:12px 8px 24px;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:500; color:#9ca3af;"><span style="width:22px; height:22px; border-radius:7px; border:2px solid #d1d5db;"></span>Today</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:600; color:#f97316;"><span style="width:22px; height:22px; border-radius:7px; background:#f97316;"></span>Meals</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:500; color:#9ca3af;"><span style="width:22px; height:22px; border-radius:7px; border:2px solid #d1d5db;"></span>Progress</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:500; color:#9ca3af;"><span style="width:22px; height:22px; border-radius:7px; border:2px solid #d1d5db;"></span>Settings</div>
+    </div>
+  </div>
+
+  <!-- ===== PROGRESS ===== -->
+  <div id="1c" data-screen-label="Progress" style="position:relative; width:390px; height:844px; background:#ffffff; border:1px solid #e5e7eb; border-radius:32px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(17,24,39,.08);">
+    <span style="position:absolute; top:14px; left:16px; z-index:3; font-size:10px; font-weight:700; padding:3px 7px; border-radius:6px; background:#111827; color:#fff;">1c</span>
+    <div style="flex:1; overflow-y:auto; padding:56px 20px 110px; display:flex; flex-direction:column; gap:20px;">
+      <div>
+        <div style="font-size:12px; font-weight:600; letter-spacing:.08em; color:#6b7280; text-transform:uppercase;">Progress</div>
+        <div style="font-size:28px; font-weight:700; letter-spacing:-.02em; line-height:1.1; margin-top:4px;">Fat loss goal</div>
+      </div>
+
+      <div style="background:#111827; color:#fff; border-radius:20px; padding:20px; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+          <div><div style="font-size:12px; color:#9ca3af; font-weight:500;">Estimated fat lost</div><div style="display:flex; align-items:baseline; gap:6px; margin-top:4px;"><span style="font-size:40px; font-weight:700; letter-spacing:-.03em; line-height:1;">1.84</span><span style="font-size:15px; color:#9ca3af;">/ 3.0 kg</span></div></div>
+          <div style="text-align:right;"><div style="font-size:12px; color:#9ca3af; font-weight:500;">Projected</div><div style="font-size:15px; font-weight:600; margin-top:4px;">~19 days</div></div>
+        </div>
+        <div style="height:8px; background:rgba(255,255,255,.12); border-radius:6px; overflow:hidden;"><div style="height:100%; width:61%; background:#f97316; border-radius:6px;"></div></div>
+        <div style="font-size:12px; color:#9ca3af; line-height:1.4;">Based on 21 finished days at an average 675 cal/day deficit against maintenance.</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
+        <div style="border:1px solid #e5e7eb; border-radius:14px; padding:12px;"><div style="font-size:20px; font-weight:700; letter-spacing:-.02em;">21</div><div style="font-size:11px; color:#6b7280; margin-top:2px;">days counted</div></div>
+        <div style="border:1px solid #e5e7eb; border-radius:14px; padding:12px;"><div style="font-size:20px; font-weight:700; letter-spacing:-.02em;">−675</div><div style="font-size:11px; color:#6b7280; margin-top:2px;">avg deficit</div></div>
+        <div style="border:1px solid #e5e7eb; border-radius:14px; padding:12px;"><div style="font-size:20px; font-weight:700; letter-spacing:-.02em;">184g</div><div style="font-size:11px; color:#6b7280; margin-top:2px;">avg protein</div></div>
+      </div>
+
+      <div style="border:1px solid #e5e7eb; border-radius:20px; padding:18px 20px; display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div><div style="font-size:13px; font-weight:600; color:#6b7280;">Weight · 30 days</div><div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;"><span style="font-size:24px; font-weight:700; letter-spacing:-.02em;">98.4 kg</span><span style="font-size:13px; font-weight:600; color:#10b981;">−1.6</span></div></div>
+          <div style="display:flex; gap:4px; font-size:11px; font-weight:600;"><span style="padding:5px 9px; border-radius:999px; color:#6b7280;">7d</span><span style="padding:5px 9px; border-radius:999px; background:#111827; color:#fff;">30d</span><span style="padding:5px 9px; border-radius:999px; color:#6b7280;">All</span></div>
+        </div>
+        <svg viewBox="0 0 330 110" width="100%" height="110" style="display:block; overflow:visible;">
+          <line x1="0" y1="20" x2="330" y2="20" stroke="#f3f4f6"></line>
+          <line x1="0" y1="55" x2="330" y2="55" stroke="#f3f4f6"></line>
+          <line x1="0" y1="90" x2="330" y2="90" stroke="#f3f4f6"></line>
+          <polyline fill="none" stroke="#e5e7eb" stroke-width="1.5" stroke-dasharray="3 3" points="0,24 330,86"></polyline>
+          <polyline fill="none" stroke="#f97316" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="0,22 24,30 48,26 72,38 96,34 120,46 144,42 168,56 192,50 216,62 240,68 264,64 288,78 312,82 330,86"></polyline>
+          <circle cx="330" cy="86" r="4" fill="#f97316" stroke="#fff" stroke-width="2"></circle>
+          <text x="0" y="108" font-size="10" fill="#9ca3af" font-family="IBM Plex Sans">17 Aug</text>
+          <text x="330" y="108" font-size="10" fill="#9ca3af" text-anchor="end" font-family="IBM Plex Sans">16 Sep</text>
+        </svg>
+        <div style="font-size:12px; color:#6b7280; line-height:1.4;">Dashed line is the trend. Daily swings are water and glycogen; the two-week trend is what matters.</div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-size:15px; font-weight:700;">Recent days</span><span style="font-size:12px; color:#6b7280;">cal vs target</span></div>
+        <div style="display:flex; flex-direction:column; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden;">
+          <div style="display:grid; grid-template-columns:1fr auto auto; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid #f3f4f6;"><div style="display:flex; align-items:center; gap:8px;"><span style="font-size:14px; font-weight:600;">Wed 16</span><span style="font-size:10px; font-weight:600; padding:2px 6px; border-radius:6px; background:#fff7ed; color:#c2410c;">In progress</span></div><span style="font-size:13px; color:#6b7280;">1,840 / 2,926</span><span style="width:52px; text-align:right; font-size:13px; color:#9ca3af;">—</span></div>
+          <div style="display:grid; grid-template-columns:1fr auto auto; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid #f3f4f6;"><span style="font-size:14px; font-weight:600;">Tue 15</span><span style="font-size:13px; color:#6b7280;">2,610 / 2,795</span><span style="width:52px; text-align:right; font-size:13px; font-weight:600; color:#10b981;">−185</span></div>
+          <div style="display:grid; grid-template-columns:1fr auto auto; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid #f3f4f6;"><span style="font-size:14px; font-weight:600;">Mon 14</span><span style="font-size:13px; color:#6b7280;">2,720 / 2,595</span><span style="width:52px; text-align:right; font-size:13px; font-weight:600; color:#ef4444;">+125</span></div>
+          <div style="display:grid; grid-template-columns:1fr auto auto; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid #f3f4f6;"><span style="font-size:14px; font-weight:600;">Sun 13</span><span style="font-size:13px; color:#6b7280;">2,480 / 2,550</span><span style="width:52px; text-align:right; font-size:13px; font-weight:600; color:#10b981;">−70</span></div>
+          <div style="display:grid; grid-template-columns:1fr auto auto; gap:12px; align-items:center; padding:12px 16px;"><span style="font-size:14px; font-weight:600;">Sat 12</span><span style="font-size:13px; color:#6b7280;">2,590 / 2,840</span><span style="width:52px; text-align:right; font-size:13px; font-weight:600; color:#10b981;">−250</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute; left:0; right:0; bottom:0; height:84px; background:rgba(255,255,255,.92); backdrop-filter:blur(12px); border-top:1px solid #e5e7eb; display:grid; grid-template-columns:repeat(4,1fr); padding:12px 8px 24px;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:500; color:#9ca3af;"><span style="width:22px; height:22px; border-radius:7px; border:2px solid #d1d5db;"></span>Today</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:500; color:#9ca3af;"><span style="width:22px; height:22px; border-radius:7px; border:2px solid #d1d5db;"></span>Meals</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:600; color:#f97316;"><span style="width:22px; height:22px; border-radius:7px; background:#f97316;"></span>Progress</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:500; color:#9ca3af;"><span style="width:22px; height:22px; border-radius:7px; border:2px solid #d1d5db;"></span>Settings</div>
+    </div>
+  </div>
+
+  <!-- ===== SETTINGS SHEET ===== -->
+  <div id="1d" data-screen-label="Settings sheet" style="position:relative; width:390px; height:844px; background:#ffffff; border:1px solid #e5e7eb; border-radius:32px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(17,24,39,.08);">
+    <span style="position:absolute; top:14px; left:16px; z-index:3; font-size:10px; font-weight:700; padding:3px 7px; border-radius:6px; background:#111827; color:#fff;">1d</span>
+    <div style="flex:1; padding:56px 20px 0; display:flex; flex-direction:column; gap:20px;">
+      <div>
+        <div style="font-size:12px; font-weight:600; letter-spacing:.08em; color:#6b7280; text-transform:uppercase;">Settings</div>
+        <div style="font-size:28px; font-weight:700; letter-spacing:-.02em; line-height:1.1; margin-top:4px;">Targets &amp; data</div>
+      </div>
+      <div style="display:flex; flex-direction:column; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #f3f4f6;"><span style="font-size:14px; font-weight:600;">Training day</span><span style="font-size:14px; color:#6b7280;">2,750 cal · 190g</span></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #f3f4f6;"><span style="font-size:14px; font-weight:600;">Rest day</span><span style="font-size:14px; color:#6b7280;">2,550 cal · 190g</span></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #f3f4f6;"><span style="font-size:14px; font-weight:600;">Maintenance</span><span style="font-size:14px; color:#6b7280;">2,950 cal</span></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px;"><span style="font-size:14px; font-weight:600;">Step adjustment</span><span style="font-size:14px; color:#6b7280;">+45 cal / 1,000 above 2,500</span></div>
+      </div>
+      <div style="display:flex; flex-direction:column; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #f3f4f6;"><span style="font-size:14px; font-weight:600;">Fat loss goal</span><span style="font-size:14px; color:#6b7280;">3.0 kg</span></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px;"><span style="font-size:14px; font-weight:600;">Appearance</span><div style="display:flex; background:#f3f4f6; border-radius:999px; padding:3px; font-size:12px; font-weight:600;"><span style="padding:5px 10px; border-radius:999px; background:#fff; color:#111827; box-shadow:0 1px 2px rgba(0,0,0,.08);">System</span><span style="padding:5px 10px; color:#6b7280;">Light</span><span style="padding:5px 10px; color:#6b7280;">Dark</span></div></div>
+      </div>
+      <div style="display:flex; flex-direction:column; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #f3f4f6;"><span style="font-size:14px; font-weight:600;">Backup &amp; restore</span><span style="color:#9ca3af;">›</span></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px;"><span style="font-size:14px; font-weight:600;">Move a day</span><span style="color:#9ca3af;">›</span></div>
+      </div>
+    </div>
+
+    <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; background:rgba(17,24,39,.45); z-index:4;"></div>
+      <div style="position:absolute; left:0; right:0; bottom:0; z-index:5; background:#fff; border-radius:28px 28px 0 0; padding:12px 20px 32px; display:flex; flex-direction:column; gap:18px; box-shadow:0 -12px 40px rgba(17,24,39,.15);">
+        <div style="width:40px; height:4px; border-radius:2px; background:#e5e7eb; align-self:center;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:20px; font-weight:700; letter-spacing:-.02em;">Backup &amp; restore</div>
+          <button style="width:32px; height:32px; border-radius:50%; border:none; background:#f3f4f6; color:#374151; font-size:16px; cursor:pointer;">×</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; background:#f0fdf4; color:#166534; font-size:13px;"><span style="width:8px; height:8px; border-radius:50%; background:#10b981; flex:none;"></span>Saving automatically to this device. Last backup 3 days ago.</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <button style="padding:14px; border-radius:14px; border:none; background:#111827; color:#fff; font-size:14px; font-weight:600; cursor:pointer;">Copy my data</button>
+          <button style="padding:14px; border-radius:14px; border:1px solid #e5e7eb; background:#fff; font-size:14px; font-weight:600; color:#111827; cursor:pointer;">Restore data</button>
+        </div>
+        <textarea placeholder="Paste backup text here to restore" style="width:100%; height:88px; padding:12px; border:1px solid #e5e7eb; border-radius:14px; font-family:ui-monospace, monospace; font-size:12px; background:#f9fafb; resize:none; outline:none;"></textarea>
+        <div style="display:flex; flex-direction:column; gap:10px; padding-top:6px; border-top:1px solid #f3f4f6;">
+          <div style="display:flex; justify-content:space-between; align-items:center;"><div><div style="font-size:14px; font-weight:600;">Move this day</div><div style="font-size:12px; color:#6b7280; margin-top:2px;">Logged on the wrong date? Move everything.</div></div><span style="font-size:13px; font-weight:600; padding:8px 12px; border-radius:999px; border:1px solid #e5e7eb;">Pick date</span></div>
+          <button style="padding:12px; border-radius:14px; border:1px solid #fecaca; background:#fff; color:#b91c1c; font-size:13px; font-weight:600; cursor:pointer;">Erase all data</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="position:absolute; left:0; right:0; bottom:0; height:84px; background:rgba(255,255,255,.92); backdrop-filter:blur(12px); border-top:1px solid #e5e7eb; display:grid; grid-template-columns:repeat(4,1fr); padding:12px 8px 24px;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:500; color:#9ca3af;"><span style="width:22px; height:22px; border-radius:7px; border:2px solid #d1d5db;"></span>Today</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:500; color:#9ca3af;"><span style="width:22px; height:22px; border-radius:7px; border:2px solid #d1d5db;"></span>Meals</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:500; color:#9ca3af;"><span style="width:22px; height:22px; border-radius:7px; border:2px solid #d1d5db;"></span>Progress</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:600; color:#f97316;"><span style="width:22px; height:22px; border-radius:7px; background:#f97316;"></span>Settings</div>
+    </div>
+  </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;dayType&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;training&quot;,&quot;rest&quot;],&quot;default&quot;:&quot;training&quot;,&quot;tsType&quot;:&quot;'training'|'rest'&quot;,&quot;section&quot;:&quot;Today&quot;},&quot;sheetOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Settings&quot;}}">
+class Component extends DCLogic {
+  state = { dayType: null };
+  renderVals() {
+    const dayType = this.state.dayType ?? this.props.dayType ?? 'training';
+    const base = dayType === 'training' ? 2750 : 2550;
+    const steps = 6400, bonus = Math.round(((steps - 2500) / 1000) * 45);
+    const target = base + bonus, eaten = 1840;
+    return {
+      workoutBg: dayType === 'training' ? '#f97316' : '#f9fafb',
+      workoutFg: dayType === 'training' ? '#ffffff' : '#111827',
+      workoutMark: dayType === 'training' ? '✓' : '—',
+      workoutLabel: dayType === 'training' ? 'Done' : 'Tap if done',
+      toggleDayType: () => this.setState(s => ({ dayType: (s.dayType ?? this.props.dayType ?? 'training') === 'training' ? 'rest' : 'training' })),
+      calTarget: target.toLocaleString(),
+      calLeft: (target - eaten).toLocaleString(),
+      calPct: Math.min(100, Math.round(eaten / target * 100)) + '%',
+      stepBonus: bonus,
+      sheetOpen: this.props.sheetOpen ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>
