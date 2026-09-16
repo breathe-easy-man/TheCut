@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>theCut</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1a1a1a;
+    background: #fafafa;
+  }
+  #app { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; }
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .sub { font-size: 12px; color: #888; margin-top: 2px; }
+
+  /* Launch screen. Plain markup so it paints before any script runs; removed by JS on tap
+     or after a beat. If scripting were broken the app would be dead anyway, so no fallback. */
+  #launch {
+    position: fixed; inset: 0; z-index: 100; background: #111; color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 32px; text-align: center; transition: opacity .45s ease;
+  }
+  #launch.gone { opacity: 0; pointer-events: none; }
+  #launch .lname { font-size: 40px; font-weight: 800; letter-spacing: -1.5px; }
+  #launch .lrule { width: 34px; height: 3px; background: #10b981; margin: 18px 0 22px; border-radius: 2px; }
+  #launch .lquote { font-size: 15px; line-height: 1.55; font-style: italic; color: #e8e8e8; max-width: 330px; }
+  #launch .lauthor { font-size: 12px; color: #888; margin-top: 12px; text-transform: uppercase; letter-spacing: 1px; }
+
+  .tabs { display: flex; gap: 8px; margin: 12px 0; }
+  .tabs button {
+    flex: 1; padding: 10px 6px; border-radius: 8px; border: 1px solid #ddd;
+    background: #fff; font-size: 14px; font-weight: 600; color: #666; cursor: pointer;
+  }
+  .tabs button.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .date-row { display: flex; align-items: center; gap: 8px; }
+  .navbtn {
+    background: #fff; border: 1px solid #ddd; border-radius: 8px;
+    padding: 10px 14px; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  .navbtn:active { background: #e8e8e8; }
+  #dateInput {
+    flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px;
+    font-size: 14px; text-align: center; background: #fff; font-family: inherit;
+  }
+  .today-btn {
+    width: 100%; padding: 8px; background: #fff; border: 1px solid #ddd;
+    border-radius: 8px; font-size: 13px; cursor: pointer; color: #555; margin-top: 8px;
+  }
+  .daylabel { text-align: center; font-size: 13px; color: #666; margin-top: 8px; font-weight: 600; }
+
+  .day-toggle { display: flex; gap: 8px; margin-top: 10px; }
+  .day-toggle button {
+    flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd;
+    background: #fff; font-size: 13px; font-weight: 600; color: #666; cursor: pointer;
+  }
+  .day-toggle button.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+  /* Whole row is a label, so tapping anywhere on it flips the checkbox */
+  .done-row {
+    display: flex; align-items: center; gap: 10px; margin-top: 10px;
+    background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 14px;
+    cursor: pointer; user-select: none;
+  }
+  .done-row:active { background: #f5f5f5; }
+  .done-row .txt { flex: 1; font-size: 13px; font-weight: 600; }
+  .switch { position: relative; width: 46px; height: 26px; flex: none; pointer-events: none; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; }
+  .slider {
+    position: absolute; inset: 0; background: #ccc;
+    border-radius: 26px; transition: .2s;
+  }
+  .slider:before {
+    content: ""; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px;
+    background: #fff; border-radius: 50%; transition: .2s;
+  }
+  .switch input:checked ~ .slider { background: #10b981; }
+  .switch input:checked ~ .slider:before { transform: translateX(20px); }
+
+  .card { background: #fff; border-radius: 12px; padding: 14px; margin: 14px 0; border: 1px solid #eee; }
+  .card h3 { font-size: 14px; margin-bottom: 12px; }
+
+  .bar-row { margin-bottom: 12px; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+  .bar-label .name { font-weight: 600; }
+  .bar-label .nums { color: #666; }
+  .bar-bg { background: #eee; border-radius: 6px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; }
+  .bar-fill.cal { background: #3b82f6; }
+  .bar-fill.protein { background: #10b981; }
+  .bar-fill.goal { background: #f59e0b; }
+  .bar-fill.over { background: #ef4444; }
+  .remaining { font-size: 12px; color: #666; margin-top: 3px; }
+
+  .steps-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .steps-row label { font-size: 13px; color: #666; flex: 1; }
+  .steps-row input[type=number], .steps-row input[type=text], .steps-row input[type=password] {
+    width: 110px; padding: 8px; border: 1px solid #ddd; border-radius: 8px;
+    font-size: 13px; font-family: inherit;
+  }
+  .steps-row input[readonly] { background: #f5f5f5; color: #888; }
+  .steps-row input.wide { width: 100%; }
+  .hint { font-size: 11px; color: #999; margin-top: 6px; line-height: 1.4; }
+  .derived {
+    font-size: 12px; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0;
+    border-radius: 8px; padding: 8px 10px; margin-top: 10px; line-height: 1.5;
+  }
+  .seg { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+    color: #aaa; margin: 16px 0 2px; }
+
+  .meal-item {
+    background: #fff; border: 1px solid #eee; border-radius: 10px;
+    padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .meal-item .info { flex: 1; padding-right: 8px; }
+  .meal-item .mname { font-size: 14px; font-weight: 600; }
+  .meal-item .mnums { font-size: 12px; color: #666; margin-top: 2px; }
+  .del-btn {
+    background: #f5f5f5; border: 1px solid #e5e5e5; color: #999;
+    font-size: 13px; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+  }
+  .empty { text-align: center; color: #999; font-size: 13px; padding: 20px 0; }
+
+  .add-form input {
+    width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;
+    font-size: 14px; margin-bottom: 8px; font-family: inherit;
+  }
+  .row2 { display: flex; gap: 8px; }
+  .row2 input { flex: 1; }
+  .add-btn {
+    width: 100%; padding: 12px; background: #1a1a1a; color: #fff; border: none;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .photo-btn {
+    width: 100%; padding: 12px; background: #fff; color: #1a1a1a; border: 1px solid #1a1a1a;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+  }
+  .photo-btn:disabled { opacity: .5; cursor: default; }
+  .ai-err { color: #b91c1c; }
+
+  .stat-grid { display: flex; gap: 8px; }
+  .stat { flex: 1; background: #f8f8f8; border-radius: 10px; padding: 10px; text-align: center; }
+  .stat .big { font-size: 18px; font-weight: 700; }
+  .stat .lbl { font-size: 11px; color: #777; margin-top: 2px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; color: #888; font-weight: 600; padding: 6px 4px; border-bottom: 1px solid #eee; }
+  td { padding: 7px 4px; border-bottom: 1px solid #f5f5f5; }
+  td.num { text-align: right; }
+  .pos { color: #10b981; }
+  .neg { color: #ef4444; }
+  .pending { color: #b45309; font-size: 11px; }
+
+  .warn { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; font-size: 12px;
+    padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; line-height: 1.4; }
+  .ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 12px;
+    padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; }
+
+  .io-row { display: flex; gap: 8px; }
+  .io-row button {
+    flex: 1; padding: 10px; border: 1px solid #ddd; background: #fff;
+    border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  #importArea {
+    width: 100%; height: 90px; margin-top: 8px; padding: 8px; font-size: 11px;
+    border: 1px solid #ddd; border-radius: 8px; font-family: monospace; display: none;
+  }
+  .danger { color: #b91c1c; border-color: #fecaca !important; }
+  .move-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .move-row input { flex: 1; padding: 9px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; font-family: inherit; }
+  .move-row button { padding: 9px 12px; border: 1px solid #ddd; background: #fff; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="launch">
+  <div class="lname">theCut</div>
+  <div class="lrule"></div>
+  <div class="lquote" id="lquote"></div>
+  <div class="lauthor" id="lauthor"></div>
+</div>
+
+<div id="app">
+  <h1>theCut</h1>
+  <div class="sub" id="storageMode"></div>
+
+  <div class="tabs">
+    <button type="button" data-tab="day" class="active">Today</button>
+    <button type="button" data-tab="progress">Progress</button>
+    <button type="button" data-tab="settings">Settings</button>
+  </div>
+
+  <div id="warnBox"></div>
+
+  <div class="page active" id="page-day">
+    <div class="date-row">
+      <button class="navbtn" id="prevDay" type="button">Prev</button>
+      <input type="date" id="dateInput">
+      <button class="navbtn" id="nextDay" type="button">Next</button>
+    </div>
+    <div class="daylabel" id="dayLabel"></div>
+    <button class="today-btn" id="todayBtn" type="button">Jump to today</button>
+
+    <div class="day-toggle">
+      <button type="button" data-day="training">Training day</button>
+      <button type="button" data-day="rest">Rest day</button>
+    </div>
+
+    <label class="done-row" for="doneToggle">
+      <span class="txt">Day finished (count in progress)</span>
+      <span class="switch">
+        <input type="checkbox" id="doneToggle">
+        <span class="slider"></span>
+      </span>
+    </label>
+    <div class="hint" id="doneHint"></div>
+
+    <div class="card">
+      <div class="bar-row">
+        <div class="bar-label"><span class="name">Calories</span><span class="nums" id="calNums"></span></div>
+        <div class="bar-bg"><div class="bar-fill cal" id="calBar"></div></div>
+        <div class="remaining" id="calRemaining"></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label"><span class="name">Protein</span><span class="nums" id="proNums"></span></div>
+        <div class="bar-bg"><div class="bar-fill protein" id="proBar"></div></div>
+        <div class="remaining" id="proRemaining"></div>
+      </div>
+      <div class="steps-row">
+        <label for="stepsInput">Steps</label>
+        <input type="number" id="stepsInput" placeholder="0" inputmode="numeric">
+      </div>
+      <div class="steps-row">
+        <label for="weightInput">Weight (kg)</label>
+        <input type="number" id="weightInput" placeholder="99.7" step="0.1" inputmode="decimal">
+      </div>
+      <div class="hint" id="stepHint"></div>
+    </div>
+
+    <div id="mealList"></div>
+
+    <div class="card add-form">
+      <h3>Add meal</h3>
+      <button class="photo-btn" id="photoBtn" type="button">Estimate from a photo</button>
+      <div class="hint" id="aiStatus" style="margin-top:0;margin-bottom:10px;"></div>
+      <input type="text" id="mealName" placeholder="e.g. Chicken breast + rice">
+      <div class="row2">
+        <input type="number" id="mealCal" placeholder="Calories" inputmode="numeric">
+        <input type="number" id="mealProtein" placeholder="Protein (g)" inputmode="decimal">
+      </div>
+      <button class="add-btn" id="addBtn" type="button">Add meal</button>
+    </div>
+
+    <div class="card">
+      <h3>Logged on the wrong day?</h3>
+      <div class="move-row">
+        <input type="date" id="moveTarget">
+        <button type="button" id="moveBtn">Move</button>
+      </div>
+      <div class="hint" id="moveHint">Moves everything on the day you are viewing to the date you pick.</div>
+    </div>
+  </div>
+
+  <div class="page" id="page-progress">
+    <div class="card">
+      <h3>Fat loss goal</h3>
+      <div class="bar-row">
+        <div class="bar-label"><span class="name">Estimated fat lost</span><span class="nums" id="goalNums"></span></div>
+        <div class="bar-bg"><div class="bar-fill goal" id="goalBar"></div></div>
+        <div class="remaining" id="goalEta"></div>
+      </div>
+      <div class="steps-row">
+        <label for="goalInput">Goal (kg of fat)</label>
+        <input type="number" id="goalInput" step="0.5" inputmode="decimal">
+      </div>
+      <div class="hint">Deficit is measured against maintenance plus the step adjustment, not against the daily target. Only days marked finished count.</div>
+    </div>
+
+    <div class="card">
+      <h3>Totals across finished days</h3>
+      <div class="stat-grid">
+        <div class="stat"><div class="big" id="statDays">0</div><div class="lbl">days counted</div></div>
+        <div class="stat"><div class="big" id="statDeficit">0</div><div class="lbl">avg daily deficit</div></div>
+        <div class="stat"><div class="big" id="statProtein">0g</div><div class="lbl">avg protein</div></div>
+      </div>
+      <div class="hint" id="pendingNote"></div>
+    </div>
+
+    <div class="card">
+      <h3>Weight</h3>
+      <div class="stat-grid">
+        <div class="stat"><div class="big" id="statWStart">-</div><div class="lbl">first logged</div></div>
+        <div class="stat"><div class="big" id="statWNow">-</div><div class="lbl">latest</div></div>
+        <div class="stat"><div class="big" id="statWDelta">-</div><div class="lbl">change</div></div>
+      </div>
+      <div class="hint">Scale weight swings with water, food and glycogen. The two-week trend matters, not one day.</div>
+    </div>
+
+    <div class="card">
+      <h3>Recent days</h3>
+      <table>
+        <thead><tr><th>Date</th><th class="num">Cal</th><th class="num">Target</th><th class="num">Diff</th><th class="num">Protein</th></tr></thead>
+        <tbody id="histBody"></tbody>
+      </table>
+      <div class="hint">Days not marked finished show as in progress and stay out of the averages.</div>
+    </div>
+
+    <div class="card">
+      <h3>Backup</h3>
+      <div class="io-row">
+        <button type="button" id="exportBtn">Copy my data</button>
+        <button type="button" id="importBtn">Restore data</button>
+      </div>
+      <textarea id="importArea" placeholder="Paste backup text here, then press Restore data again"></textarea>
+      <div class="hint" id="ioHint">Useful before clearing browser data or moving to another device.</div>
+      <div class="io-row" style="margin-top:10px;">
+        <button type="button" id="resetBtn" class="danger">Erase all logged days</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page-settings">
+    <div class="card">
+      <h3>Goals</h3>
+
+      <div class="seg">Bodyweight</div>
+      <label class="done-row" for="setUseLatest" style="margin-top:6px;">
+        <span class="txt">Track my latest logged weight</span>
+        <span class="switch">
+          <input type="checkbox" id="setUseLatest" data-set="useLatestWeight">
+          <span class="slider"></span>
+        </span>
+      </label>
+      <div class="steps-row">
+        <label for="setWeight">Bodyweight (kg)</label>
+        <input type="number" id="setWeight" data-set="bodyweight" step="0.1" inputmode="decimal">
+      </div>
+      <div class="hint" id="weightHint"></div>
+
+      <div class="seg">Maintenance</div>
+      <div class="steps-row">
+        <label for="setMaintPerKg">Calories per kg</label>
+        <input type="number" id="setMaintPerKg" data-set="maintenancePerKg" step="0.01" inputmode="decimal">
+      </div>
+      <div class="steps-row">
+        <label for="setMaintOverride">Or a fixed number</label>
+        <input type="number" id="setMaintOverride" data-set="maintenanceOverride" placeholder="auto" inputmode="numeric">
+      </div>
+
+      <div class="seg">Protein</div>
+      <div class="steps-row">
+        <label for="setProteinPerKg">Grams per kg</label>
+        <input type="number" id="setProteinPerKg" data-set="proteinPerKg" step="0.01" inputmode="decimal">
+      </div>
+      <div class="steps-row">
+        <label for="setProteinOverride">Or a fixed number</label>
+        <input type="number" id="setProteinOverride" data-set="proteinOverride" placeholder="auto" inputmode="numeric">
+      </div>
+
+      <div class="seg">Daily deficit</div>
+      <div class="steps-row">
+        <label for="setRestDeficit">Rest-day deficit</label>
+        <input type="number" id="setRestDeficit" data-set="restDeficit" inputmode="numeric">
+      </div>
+      <div class="steps-row">
+        <label for="setTrainingBump">Training-day bump</label>
+        <input type="number" id="setTrainingBump" data-set="trainingBump" inputmode="numeric">
+      </div>
+
+      <div class="seg">Steps</div>
+      <div class="steps-row">
+        <label for="setStepBaseline">Baseline steps</label>
+        <input type="number" id="setStepBaseline" data-set="stepBaseline" inputmode="numeric">
+      </div>
+      <div class="steps-row">
+        <label for="setCalPer1000">Cal per 1000 steps</label>
+        <input type="number" id="setCalPer1000" data-set="calPer1000Steps" inputmode="numeric">
+      </div>
+
+      <div class="derived" id="derived"></div>
+      <div class="hint">Days you have already marked finished keep the numbers they were judged against, so changing anything here never rewrites your history.</div>
+    </div>
+
+    <div class="card">
+      <h3>Meal photo AI</h3>
+      <div class="steps-row">
+        <label for="setApiKey">Anthropic API key</label>
+      </div>
+      <div class="steps-row">
+        <input class="wide" type="password" id="setApiKey" data-set="apiKey" placeholder="sk-ant-..." autocomplete="off">
+      </div>
+      <div class="hint">Stored on this device only, and left out of backups. Photos go to Claude for the estimate and are not kept. Roughly $0.006 per photo.</div>
+    </div>
+  </div>
+</div>
+
+<script src="capacitor.js"></script>
+<script src="tracker-core.js"></script>
+<script>
+(function() {
+  var C = window.TrackerCore;
+  var KEY = 'daily-tracker-data';   /* unchanged, so a backup from the old page restores as-is */
+
+  var QUOTES = [
+    ["Everybody wants to be a bodybuilder, but don't nobody want to lift no heavy-ass weight.", "Ronnie Coleman"],
+    ["The last three or four reps is what makes the muscle grow. This area of pain divides a champion from someone who is not a champion.", "Arnold Schwarzenegger"],
+    ["Stimulate, don't annihilate.", "Lee Haney"],
+    ["The worst thing I can be is the same as everybody else.", "Arnold Schwarzenegger"],
+    ["Yeah buddy. Light weight, baby.", "Ronnie Coleman"],
+    ["The mind is the limit. As long as the mind can envision the fact that you can do something, you can do it.", "Arnold Schwarzenegger"],
+    ["Everybody pities the weak; jealousy you have to earn.", "Arnold Schwarzenegger"],
+    ["I hated every minute of training, but I said: don't quit. Suffer now and live the rest of your life as a champion.", "Muhammad Ali"],
+    ["Blood, sweat and respect. The first two you give, the last one you earn.", "Dwayne Johnson"],
+    ["The resistance that you fight physically in the gym and the resistance that you fight in life can only build a strong character.", "Arnold Schwarzenegger"],
+    ["Anything you want in life, you have to work for it. Nothing comes easy.", "Dorian Yates"],
+    ["What is the point of being on this Earth if you are going to be like everyone else?", "Arnold Schwarzenegger"],
+    ["Success is usually the culmination of controlling failure.", "Sylvester Stallone"],
+    ["Discipline is doing what you hate to do, but doing it like you love it.", "Mike Tyson"],
+    ["I don't count my sit-ups. I only start counting when it starts hurting.", "Muhammad Ali"],
+    ["Bodybuilding is much like any other sport. To be successful, you must dedicate yourself 100% to your training, diet and mental approach.", "Arnold Schwarzenegger"],
+    ["Don't count the days, make the days count.", "Muhammad Ali"],
+    ["You must bleed for your dreams.", "Kai Greene"],
+    ["The successful warrior is the average man, with laser-like focus.", "Bruce Lee"],
+    ["A champion is someone who gets up when he can't.", "Jack Dempsey"],
+    ["The only place where success comes before work is in the dictionary.", "Vidal Sassoon"],
+    ["Weight training is the fountain of youth.", "Lee Haney"],
+    ["If you want to be a champion, you have to train like one, eat like one, and think like one.", "Franco Columbu"],
+    ["Everything is hard before it is easy.", "Johann Wolfgang von Goethe"]
+  ];
+
+  (function launch() {
+    var q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    var box = document.getElementById('launch');
+    document.getElementById('lquote').textContent = '"' + q[0] + '"';
+    document.getElementById('lauthor').textContent = q[1];
+    var dismiss = function() {
+      box.className = 'gone';
+      setTimeout(function() { box.style.display = 'none'; }, 500);
+    };
+    box.addEventListener('click', dismiss);
+    setTimeout(dismiss, 1800);
+  })();
+
+  var store = {
+    ok: false,
+    get: function(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
+    set: function(k, v) { try { window.localStorage.setItem(k, v); return true; } catch (e) { return false; } },
+    del: function(k) { try { window.localStorage.removeItem(k); } catch (e) {} }
+  };
+  try {
+    window.localStorage.setItem('__t', '1');
+    window.localStorage.removeItem('__t');
+    store.ok = true;
+  } catch (e) { store.ok = false; }
+
+  function ymd(d) {
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+  function todayStr() { return ymd(new Date()); }
+  function parseDate(s) {
+    var p = s.split('-');
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  }
+  var round1 = C.round1;
+
+  var cache = {};
+  var settings = C.withDefaults({});
+  var currentDate = todayStr();
+  var currentTab = 'day';
+  var flash = '';
+
+  function defaultDay() {
+    return { dayType: 'rest', meals: [], steps: '', weight: '', done: false };
+  }
+  function getDay(date) {
+    if (!cache[date]) cache[date] = defaultDay();
+    if (typeof cache[date].done === 'undefined') cache[date].done = false;
+    return cache[date];
+  }
+  function isEmptyDay(d) {
+    return !d || ((!d.meals || d.meals.length === 0) && !d.steps && !d.weight);
+  }
+
+  /* The most recent day carrying a weight, which is what the goals are derived from. */
+  function latestWeight() {
+    var dates = [], k;
+    for (k in cache) if (cache[k] && cache[k].weight) dates.push(k);
+    if (!dates.length) return 0;
+    dates.sort();
+    return Number(cache[dates[dates.length - 1]].weight) || 0;
+  }
+
+  function targetFor(day) { return C.targetFor(day, settings, latestWeight()); }
+  function totals(day)    { return C.totals(day); }
+  function stepBonus(day) { return C.stepBonus(day, settings); }
+
+  /* The API key is deliberately not part of a backup blob — that text gets pasted around. */
+  function exportable() {
+    var s = {}, k;
+    for (k in settings) if (k !== 'apiKey') s[k] = settings[k];
+    return JSON.stringify({ logs: cache, settings: s });
+  }
+
+  function save() {
+    if (!store.ok) return;
+    store.set(KEY, JSON.stringify({ logs: cache, settings: settings }));
+  }
+
+  function load() {
+    if (!store.ok) return;
+    var raw = store.get(KEY);
+    if (!raw) return;
+    try {
+      var data = JSON.parse(raw);
+      if (data.logs) cache = data.logs;
+      settings = C.withDefaults(data.settings);
+    } catch (e) {}
+  }
+
+  /* Days logged before this feature existed get their flag guessed, and any finished day that
+     has never been snapshotted gets frozen now — the alternative is letting it float forever
+     and re-score itself every time the scale moves. */
+  function backfillDoneFlags() {
+    var t = todayStr(), changed = false, snap = C.snapshotFor(settings, latestWeight());
+    for (var k in cache) {
+      var d = cache[k];
+      if (typeof d.done === 'undefined') {
+        d.done = (k < t) && d.meals && d.meals.length > 0;
+        changed = true;
+      }
+      if (d.done && !d.maintenance) {
+        d.maintenance = snap.maintenance;
+        d.proteinTarget = snap.proteinTarget;
+        changed = true;
+      }
+    }
+    if (changed) save();
+  }
+
+  function allLoggedDates() {
+    var out = [];
+    for (var k in cache) {
+      if (cache[k] && cache[k].meals && cache[k].meals.length > 0) out.push(k);
+    }
+    out.sort();
+    return out;
+  }
+  function countedDates() {
+    return allLoggedDates().filter(function(d) { return getDay(d).done; });
+  }
+
+  function renderWarn() {
+    var box = document.getElementById('warnBox');
+    if (flash) box.innerHTML = '<div class="ok">' + flash + '</div>';
+    else if (!store.ok) box.innerHTML = '<div class="warn">This device is blocking storage, so entries will not survive a restart. Use Copy my data on the Progress tab.</div>';
+    else box.innerHTML = '';
+  }
+
+  function renderDay() {
+    var day = getDay(currentDate);
+    var t = totals(day);
+    var target = targetFor(day);
+
+    document.getElementById('dateInput').value = currentDate;
+    var label = parseDate(currentDate).toLocaleDateString('en-GB',
+      { weekday: 'long', day: 'numeric', month: 'long' });
+    document.getElementById('dayLabel').textContent =
+      label + (currentDate === todayStr() ? ' (today)' : '');
+
+    var toggles = document.querySelectorAll('[data-day]');
+    for (var i = 0; i < toggles.length; i++) {
+      toggles[i].className = (toggles[i].getAttribute('data-day') === day.dayType) ? 'active' : '';
+    }
+
+    document.getElementById('doneToggle').checked = !!day.done;
+    document.getElementById('doneHint').textContent = day.done
+      ? 'Counted in your progress averages.'
+      : 'Not counted yet. Switch this on once you have logged everything for the day.';
+
+    document.getElementById('calNums').textContent = t.cal + ' / ' + target.cal;
+    var calBar = document.getElementById('calBar');
+    calBar.style.width = Math.min(100, (t.cal / target.cal) * 100) + '%';
+    calBar.className = 'bar-fill ' + (t.cal > target.cal ? 'over' : 'cal');
+    var calLeft = target.cal - t.cal;
+    document.getElementById('calRemaining').textContent =
+      calLeft >= 0 ? (calLeft + ' cal left') : (Math.abs(calLeft) + ' cal over');
+
+    document.getElementById('proNums').textContent = t.protein + 'g / ' + target.protein + 'g';
+    document.getElementById('proBar').style.width =
+      Math.min(100, (t.protein / target.protein) * 100) + '%';
+    var proLeft = round1(target.protein - t.protein);
+    document.getElementById('proRemaining').textContent =
+      proLeft > 0 ? (proLeft + 'g protein left') : 'protein target hit';
+
+    document.getElementById('stepsInput').value = day.steps || '';
+    document.getElementById('weightInput').value = day.weight || '';
+
+    var bonus = stepBonus(day);
+    var baseline = C.num(settings.stepBaseline, 2500);
+    var per = C.num(settings.calPer1000Steps, 45);
+    var hint = document.getElementById('stepHint');
+    if (!day.steps) {
+      hint.textContent = 'Steps adjust this day’s calorie target. Baseline ' + baseline +
+        '; every extra 1000 adds about ' + per + ' cal.';
+    } else if (bonus === 0) {
+      hint.textContent = 'At the ' + baseline + '-step baseline, no adjustment.';
+    } else if (bonus > 0) {
+      hint.textContent = 'Above baseline, target raised by ' + bonus + ' cal.';
+    } else {
+      hint.textContent = 'Below baseline, target lowered by ' + Math.abs(bonus) + ' cal.';
+    }
+
+    var list = document.getElementById('mealList');
+    if (day.meals.length === 0) {
+      list.innerHTML = '<div class="empty">No meals logged yet</div>';
+    } else {
+      var html = '';
+      for (var j = 0; j < day.meals.length; j++) {
+        var m = day.meals[j];
+        var safe = String(m.name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        html += '<div class="meal-item"><div class="info">' +
+                '<div class="mname">' + safe + '</div>' +
+                '<div class="mnums">' + m.cal + ' cal, ' + round1(Number(m.protein)) + 'g protein</div>' +
+                '</div><button type="button" class="del-btn" data-remove="' + m.id + '">Del</button></div>';
+      }
+      list.innerHTML = html;
+    }
+  }
+
+  function renderProgress() {
+    var counted = countedDates();
+    var all = allLoggedDates();
+    var lw = latestWeight();
+    var totalDeficit = 0, totalProtein = 0;
+
+    for (var i = 0; i < counted.length; i++) {
+      var d = getDay(counted[i]);
+      totalDeficit += C.deficitFor(d, settings, lw);
+      totalProtein += totals(d).protein;
+    }
+
+    var n = counted.length;
+    document.getElementById('statDays').textContent = n;
+    document.getElementById('statDeficit').textContent = n ? Math.round(totalDeficit / n) : 0;
+    document.getElementById('statProtein').textContent = (n ? Math.round(totalProtein / n) : 0) + 'g';
+
+    var pendingCount = all.length - n;
+    document.getElementById('pendingNote').textContent = pendingCount
+      ? (pendingCount + ' logged day' + (pendingCount > 1 ? 's are' : ' is') + ' not marked finished and stays out of these numbers.')
+      : '';
+
+    var kgLost = totalDeficit / C.KCAL_PER_KG_FAT;
+    var goal = C.num(settings.goalKg, 3) || 3;
+    document.getElementById('goalNums').textContent = kgLost.toFixed(2) + ' / ' + goal + ' kg';
+    document.getElementById('goalBar').style.width =
+      Math.max(0, Math.min(100, (kgLost / goal) * 100)) + '%';
+
+    var avgDef = n ? (totalDeficit / n) : 0;
+    var etaEl = document.getElementById('goalEta');
+    if (n < 3) etaEl.textContent = 'Mark a few finished days for a meaningful projection.';
+    else if (avgDef <= 0) etaEl.textContent = 'At or above maintenance on average, so no fat loss projected.';
+    else {
+      var rem = goal - kgLost;
+      etaEl.textContent = rem <= 0 ? 'Goal reached based on logged deficit.'
+        : 'About ' + Math.ceil((rem * C.KCAL_PER_KG_FAT) / avgDef) + ' more days at ' + Math.round(avgDef) + ' cal/day.';
+    }
+
+    var wDates = [];
+    for (var k in cache) { if (cache[k].weight) wDates.push(k); }
+    wDates.sort();
+    if (wDates.length) {
+      var first = Number(getDay(wDates[0]).weight);
+      var last = Number(getDay(wDates[wDates.length - 1]).weight);
+      document.getElementById('statWStart').textContent = first.toFixed(1);
+      document.getElementById('statWNow').textContent = last.toFixed(1);
+      var delta = last - first;
+      document.getElementById('statWDelta').textContent = (delta >= 0 ? '+' : '') + delta.toFixed(1);
+    } else {
+      document.getElementById('statWStart').textContent = '-';
+      document.getElementById('statWNow').textContent = '-';
+      document.getElementById('statWDelta').textContent = '-';
+    }
+
+    var rows = '';
+    var recent = all.slice(-14).reverse();
+    for (var r = 0; r < recent.length; r++) {
+      var dd = getDay(recent[r]);
+      var tt = totals(dd), tg = targetFor(dd);
+      var diff = tt.cal - tg.cal;
+      var lbl = parseDate(recent[r]).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      if (!dd.done) {
+        rows += '<tr><td>' + lbl + ' <span class="pending">in progress</span></td>' +
+                '<td class="num">' + tt.cal + '</td><td class="num">' + tg.cal +
+                '</td><td class="num pending">-</td><td class="num">' + tt.protein + 'g</td></tr>';
+      } else {
+        rows += '<tr><td>' + lbl + '</td><td class="num">' + tt.cal + '</td><td class="num">' + tg.cal +
+                '</td><td class="num ' + (diff > 0 ? 'neg' : 'pos') + '">' + (diff > 0 ? '+' : '') + diff +
+                '</td><td class="num">' + tt.protein + 'g</td></tr>';
+      }
+    }
+    document.getElementById('histBody').innerHTML =
+      rows || '<tr><td colspan="5" class="empty">No days logged yet</td></tr>';
+
+    document.getElementById('goalInput').value = settings.goalKg;
+  }
+
+  function renderSettings() {
+    var lw = latestWeight();
+    var tracking = !!settings.useLatestWeight && lw > 0;
+
+    document.getElementById('setUseLatest').checked = !!settings.useLatestWeight;
+    var wEl = document.getElementById('setWeight');
+    wEl.value = tracking ? lw : settings.bodyweight;
+    wEl.readOnly = tracking;
+    document.getElementById('weightHint').textContent = tracking
+      ? 'Following the weight you logged most recently, so your targets come down as you do.'
+      : (settings.useLatestWeight ? 'No weight logged yet, so this figure is used until you log one.'
+                                  : 'Fixed. Your logged weights will not change your targets.');
+
+    document.getElementById('setMaintPerKg').value      = settings.maintenancePerKg;
+    document.getElementById('setMaintOverride').value   = settings.maintenanceOverride;
+    document.getElementById('setProteinPerKg').value    = settings.proteinPerKg;
+    document.getElementById('setProteinOverride').value = settings.proteinOverride;
+    document.getElementById('setRestDeficit').value     = settings.restDeficit;
+    document.getElementById('setTrainingBump').value    = settings.trainingBump;
+    document.getElementById('setStepBaseline').value    = settings.stepBaseline;
+    document.getElementById('setCalPer1000').value      = settings.calPer1000Steps;
+    document.getElementById('setApiKey').value          = settings.apiKey;
+
+    var m = C.maintenanceCal(settings, lw);
+    var rest = m - C.num(settings.restDeficit, 400);
+    document.getElementById('derived').textContent =
+      'Maintenance ' + m + ' cal · rest day ' + rest +
+      ' · training day ' + (rest + C.num(settings.trainingBump, 200)) +
+      ' · protein ' + C.proteinTarget(settings, lw) + 'g';
+  }
+
+  function render() {
+    renderWarn();
+    if (currentTab === 'day') renderDay();
+    else if (currentTab === 'progress') renderProgress();
+    else renderSettings();
+  }
+
+  function flashMsg(msg) {
+    flash = msg; render();
+    setTimeout(function() { flash = ''; renderWarn(); }, 3000);
+  }
+
+  function shift(days) {
+    var d = parseDate(currentDate);
+    d.setDate(d.getDate() + days);
+    currentDate = ymd(d);
+    render();
+  }
+
+  document.querySelector('.tabs').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-tab]');
+    if (!btn) return;
+    currentTab = btn.getAttribute('data-tab');
+    var tabBtns = document.querySelectorAll('[data-tab]');
+    for (var i = 0; i < tabBtns.length; i++) tabBtns[i].className = (tabBtns[i] === btn) ? 'active' : '';
+    ['day', 'progress', 'settings'].forEach(function(t) {
+      document.getElementById('page-' + t).className = 'page' + (currentTab === t ? ' active' : '');
+    });
+    render();
+  });
+
+  document.getElementById('prevDay').addEventListener('click', function() { shift(-1); });
+  document.getElementById('nextDay').addEventListener('click', function() { shift(1); });
+  document.getElementById('todayBtn').addEventListener('click', function() { currentDate = todayStr(); render(); });
+  document.getElementById('dateInput').addEventListener('change', function(e) {
+    if (e.target.value) { currentDate = e.target.value; render(); }
+  });
+
+  document.querySelector('.day-toggle').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-day]');
+    if (!btn) return;
+    getDay(currentDate).dayType = btn.getAttribute('data-day');
+    save(); render();
+  });
+
+  /* Marking a day finished freezes the maintenance and protein figures it is scored against.
+     Unmarking releases it again. */
+  document.getElementById('doneToggle').addEventListener('change', function(e) {
+    var day = getDay(currentDate);
+    day.done = e.target.checked;
+    if (day.done) {
+      var snap = C.snapshotFor(settings, latestWeight());
+      day.maintenance = snap.maintenance;
+      day.proteinTarget = snap.proteinTarget;
+    } else {
+      delete day.maintenance;
+      delete day.proteinTarget;
+    }
+    save(); render();
+  });
+
+  document.getElementById('mealList').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-remove]');
+    if (!btn) return;
+    var id = Number(btn.getAttribute('data-remove'));
+    var day = getDay(currentDate);
+    day.meals = day.meals.filter(function(m) { return m.id !== id; });
+    save(); render();
+  });
+
+  document.getElementById('stepsInput').addEventListener('change', function(e) {
+    getDay(currentDate).steps = e.target.value; save(); render();
+  });
+  document.getElementById('weightInput').addEventListener('change', function(e) {
+    getDay(currentDate).weight = e.target.value; save();
+  });
+  document.getElementById('goalInput').addEventListener('change', function(e) {
+    settings.goalKg = Number(e.target.value) || 3; save(); render();
+  });
+
+  /* One handler for the whole settings page; every field carries its own settings key. */
+  document.getElementById('page-settings').addEventListener('change', function(e) {
+    var el = e.target, k = el.getAttribute('data-set');
+    if (!k) return;
+    settings[k] = (el.type === 'checkbox') ? el.checked : el.value;
+    save(); renderSettings();
+  });
+
+  document.getElementById('addBtn').addEventListener('click', function() {
+    var nameEl = document.getElementById('mealName');
+    var calEl = document.getElementById('mealCal');
+    var proEl = document.getElementById('mealProtein');
+    var name = nameEl.value.trim();
+    var cal = Number(calEl.value);
+    var pro = Number(proEl.value);
+    if (!name || !cal) return;
+    getDay(currentDate).meals.push({ id: Date.now(), name: name, cal: cal, protein: pro || 0 });
+    nameEl.value = ''; calEl.value = ''; proEl.value = '';
+    aiStatus('');
+    save(); render();
+  });
+
+  /* ---- meal photo ---- */
+
+  function aiStatus(msg, isError) {
+    var el = document.getElementById('aiStatus');
+    el.textContent = msg || '';
+    el.className = 'hint' + (isError ? ' ai-err' : '');
+  }
+
+  var analysing = false;
+  function setAnalysing(on) {
+    analysing = on;
+    var b = document.getElementById('photoBtn');
+    b.disabled = on;
+    b.textContent = on ? 'Working…' : 'Estimate from a photo';
+  }
+
+  document.getElementById('photoBtn').addEventListener('click', function() {
+    if (analysing) return;
+
+    var key = String(settings.apiKey || '').trim();
+    if (!key) { aiStatus('Add your Anthropic API key on the Settings tab first.', true); return; }
+
+    var Camera = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Camera;
+    if (!Camera) { aiStatus('The camera is only available in the installed app.', true); return; }
+
+    setAnalysing(true);
+    aiStatus('Opening the camera…');
+
+    Camera.getPhoto({
+      resultType: 'base64',
+      source: 'PROMPT',
+      quality: 60,
+      width: 1024,
+      correctOrientation: true
+    }).then(function(photo) {
+      if (!photo || !photo.base64String) throw new Error('No photo came back.');
+      aiStatus('Reading the plate…');
+      return fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify(C.mealRequest(photo.base64String, 'image/' + (photo.format || 'jpeg')))
+      });
+    }).then(function(res) {
+      return res.json().catch(function() {
+        throw new Error('Claude sent back something unreadable (HTTP ' + res.status + ').');
+      });
+    }).then(function(body) {
+      var meal = C.parseMealResponse(body);
+      document.getElementById('mealName').value = meal.name;
+      document.getElementById('mealCal').value = meal.cal;
+      document.getElementById('mealProtein').value = meal.protein;
+      aiStatus('Estimated with ' + meal.confidence + ' confidence. Check the numbers, then Add meal.');
+    }).catch(function(e) {
+      var msg = (e && e.message) || '';
+      if (/cancel/i.test(msg)) { aiStatus(''); return; }          /* backing out is not an error */
+      aiStatus(msg || 'Could not estimate that photo. Enter it by hand.', true);
+    }).then(function() {
+      setAnalysing(false);
+    });
+  });
+
+  /* ---- backup ---- */
+
+  document.getElementById('moveBtn').addEventListener('click', function() {
+    var target = document.getElementById('moveTarget').value;
+    var hint = document.getElementById('moveHint');
+    if (!target) { hint.textContent = 'Pick a date to move this day to.'; return; }
+    if (target === currentDate) { hint.textContent = 'That is the day you are already on.'; return; }
+    var src = getDay(currentDate);
+    if (isEmptyDay(src)) { hint.textContent = 'Nothing logged on this day to move.'; return; }
+    if (!isEmptyDay(cache[target]) &&
+        !window.confirm('That date already has entries. Overwrite them?')) return;
+    cache[target] = src;
+    delete cache[currentDate];
+    currentDate = target;
+    document.getElementById('moveTarget').value = '';
+    hint.textContent = 'Moves everything on the day you are viewing to the date you pick.';
+    save();
+    flashMsg('Day moved.');
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', function() {
+    var area = document.getElementById('importArea');
+    var hint = document.getElementById('ioHint');
+    area.style.display = 'block';
+    area.value = exportable();
+    area.select();
+    try { document.execCommand('copy'); hint.textContent = 'Copied. Paste it somewhere safe. Your API key is not included.'; }
+    catch (e) { hint.textContent = 'Select the text above and copy it manually.'; }
+  });
+
+  document.getElementById('importBtn').addEventListener('click', function() {
+    var area = document.getElementById('importArea');
+    var hint = document.getElementById('ioHint');
+    if (area.style.display !== 'block' || !area.value.trim()) {
+      area.style.display = 'block'; area.value = '';
+      hint.textContent = 'Paste your backup above, then press Restore data again.';
+      area.focus(); return;
+    }
+    try {
+      var data = JSON.parse(area.value.trim());
+      if (!data.logs) throw new Error('bad');
+      var keptKey = settings.apiKey;        /* backups carry no key, so keep the one on this device */
+      cache = data.logs;
+      settings = C.withDefaults(data.settings);
+      settings.apiKey = keptKey;
+      backfillDoneFlags();
+      area.style.display = 'none'; area.value = '';
+      hint.textContent = 'Data restored.';
+      save(); render();
+    } catch (e) { hint.textContent = 'Could not read that. Paste the whole backup text.'; }
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function() {
+    if (!window.confirm('Erase all logged days? Your goals and API key are kept. This cannot be undone.')) return;
+    cache = {};
+    currentDate = todayStr();
+    save(); render();
+  });
+
+  load();
+  backfillDoneFlags();
+  currentDate = todayStr();
+  document.getElementById('storageMode').textContent =
+    store.ok ? 'Saving automatically to this device' : 'Storage unavailable, use backup';
+  render();
+})();
+</script>
+</body>
+</html>
