@@ -21,6 +21,7 @@
     trainingBump:        200,     /* training-day target - rest-day target: 2750 - 2550 */
     stepBaseline:        2500,
     calPer1000Steps:     45,
+    autoSteps:           false,   /* off until asked for: turning it on is what prompts for the permission */
     apiKey:              ''
   };
 
@@ -106,6 +107,34 @@
 
   function deficitFor(day, settings, latestWeight) {
     return (maintenanceFor(day, settings, latestWeight) + stepBonus(day, settings)) - totals(day).cal;
+  }
+
+  /* ---- automatic step counting ---- */
+
+  /* TYPE_STEP_COUNTER reports steps since the phone last booted, not steps today, so a day's
+     tally is a delta against the first reading taken that day.
+     A reboot resets the hardware counter to zero, which shows up as a reading LOWER than the
+     last one seen. When that happens the steps counted before the reboot are banked into
+     `carried` and a fresh baseline starts — without that, a reboot at lunchtime would wipe the
+     morning, or worse, produce a negative delta and a bar running backwards.
+
+     state: { day, base, carried, last }; returns the same shape plus `steps`. */
+  function stepTally(state, value, dayStr) {
+    var v = Math.max(0, Math.floor(num(value, 0)));
+    var s = state || {};
+
+    if (s.day !== dayStr) {
+      /* First reading of a new day: today starts here, whatever the counter happens to say. */
+      return { day: dayStr, base: v, carried: 0, last: v, steps: 0 };
+    }
+
+    var base = num(s.base, 0), carried = num(s.carried, 0), last = num(s.last, v);
+
+    if (v < last) {
+      carried = carried + Math.max(0, last - base);
+      base = 0;
+    }
+    return { day: dayStr, base: base, carried: carried, last: v, steps: carried + Math.max(0, v - base) };
   }
 
   /* ---- home-screen widget ---- */
@@ -233,6 +262,7 @@
     totals: totals,
     deficitFor: deficitFor,
     round1: round1,
+    stepTally: stepTally,
     pct: pct,
     fatLost: fatLost,
     widgetBlob: widgetBlob,

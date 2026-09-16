@@ -53,6 +53,11 @@
 
     <!-- Meal photo: take a new one, or pick an existing one. -->
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Automatic step counting. Only required from API 29; the sensor itself is readable
+         without it below that, so the permission is requested lazily, not at launch. -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
 </manifest>

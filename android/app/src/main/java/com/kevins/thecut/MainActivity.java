@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(WidgetBridge.class);
+        registerPlugin(StepCounter.class);
         super.onCreate(savedInstanceState);
     }
 

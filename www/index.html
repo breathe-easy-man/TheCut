@@ -449,6 +449,14 @@
         <label for="setCalPer1000">Cal per 1000 steps</label>
         <input type="number" id="setCalPer1000" data-set="calPer1000Steps" inputmode="numeric">
       </div>
+      <label class="done-row" for="setAutoSteps" style="margin-top:10px;">
+        <span class="txt">Count steps automatically</span>
+        <span class="switch">
+          <input type="checkbox" id="setAutoSteps" data-set="autoSteps">
+          <span class="slider"></span>
+        </span>
+      </label>
+      <div class="hint" id="autoStepsHint"></div>
 
       <div class="derived" id="derived"></div>
       <div class="hint">Days you have already marked finished keep the numbers they were judged against, so changing anything here never rewrites your history.</div>
@@ -585,8 +593,43 @@
     syncWidget();
   }
 
-  function bridge() {
-    return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WidgetBridge;
+  function plugin(name) {
+    return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name];
+  }
+  function bridge() { return plugin('WidgetBridge'); }
+
+  var stepState = { available: null, permitted: null };
+
+  function enableAutoSteps() {
+    var SC = plugin('StepCounter');
+    if (!SC) { renderSettings(); return; }
+    SC.request().then(function(r) {
+      if (r) stepState = { available: !!r.available, permitted: !!r.permitted };
+      if (r && r.available && r.permitted) syncSteps();
+      renderSettings();
+    }).catch(function() { renderSettings(); });
+  }
+
+  /* The counter runs in the phone's sensor hub whether or not the app is open, so reading it on
+     launch and on resume is enough — no background service, no battery cost of our own.
+     The ceiling: steps are attributed to the day they are READ. Go two days without opening the
+     app and the second day's reading claims only what accrued since the app last looked. */
+  function syncSteps() {
+    if (!settings.autoSteps) return;
+    var SC = plugin('StepCounter');
+    if (!SC) return;
+    SC.read().then(function(r) {
+      if (r) stepState = { available: !!r.available, permitted: !!r.permitted };
+      if (!r || typeof r.value !== 'number') return;   /* not permitted, or the sensor timed out */
+      var t = todayStr();
+      var day = getDay(t);
+      /* The baseline advances even on a hand-typed day, so clearing the field later resumes
+         from the right place instead of claiming every step since boot. */
+      day.stepTally = C.stepTally(day.stepTally, r.value, t);
+      if (!day.stepsManual) day.steps = String(day.stepTally.steps);
+      save();
+      render();
+    }).catch(function() {});
   }
 
   function syncWidget() {
@@ -701,6 +744,11 @@
       hint.textContent = 'Above baseline, target raised by ' + bonus + ' cal.';
     } else {
       hint.textContent = 'Below baseline, target lowered by ' + Math.abs(bonus) + ' cal.';
+    }
+    if (settings.autoSteps && currentDate === todayStr() && stepState.available !== false) {
+      hint.textContent += day.stepsManual
+        ? ' Typed by hand — clear the field to go back to counting automatically.'
+        : ' Counted automatically.';
     }
 
     var list = document.getElementById('mealList');
@@ -820,6 +868,18 @@
     document.getElementById('setCalPer1000').value      = settings.calPer1000Steps;
     document.getElementById('setApiKey').value          = settings.apiKey;
 
+    document.getElementById('setAutoSteps').checked = !!settings.autoSteps;
+    var ah = document.getElementById('autoStepsHint');
+    if (!settings.autoSteps) {
+      ah.textContent = 'Off — steps are whatever you type on the Today tab.';
+    } else if (stepState.available === false) {
+      ah.textContent = 'This phone has no step sensor, so steps stay manual.';
+    } else if (stepState.permitted === false) {
+      ah.textContent = 'Physical activity permission was declined. Switch this off and on again to ask for it.';
+    } else {
+      ah.textContent = 'Reading the phone\u2019s own step counter each time you open the app. Anything you type on the Today tab wins for that day.';
+    }
+
     var m = C.maintenanceCal(settings, lw);
     var rest = m - C.num(settings.restDeficit, 400);
     document.getElementById('derived').textContent =
@@ -904,7 +964,11 @@
   });
 
   document.getElementById('stepsInput').addEventListener('change', function(e) {
-    getDay(currentDate).steps = e.target.value; save(); render();
+    var day = getDay(currentDate);
+    day.steps = e.target.value;
+    day.stepsManual = !!e.target.value;   /* clearing the field hands the day back to the sensor */
+    save(); render();
+    if (!day.stepsManual) syncSteps();
   });
   document.getElementById('weightInput').addEventListener('change', function(e) {
     getDay(currentDate).weight = e.target.value; save();
@@ -918,7 +982,9 @@
     var el = e.target, k = el.getAttribute('data-set');
     if (!k) return;
     settings[k] = (el.type === 'checkbox') ? el.checked : el.value;
-    save(); renderSettings();
+    save();
+    if (k === 'autoSteps' && settings.autoSteps) enableAutoSteps();
+    else renderSettings();
   });
 
   document.getElementById('addBtn').addEventListener('click', function() {
@@ -1020,7 +1086,9 @@
   }
 
   document.addEventListener('visibilitychange', function() {
-    if (!document.hidden) checkWidgetAction();
+    if (document.hidden) return;
+    checkWidgetAction();
+    syncSteps();
   });
 
   /* ---- backup ---- */
@@ -1090,6 +1158,7 @@
   render();
   syncWidget();
   checkWidgetAction();
+  syncSteps();
 })();
 </script>
 </body>

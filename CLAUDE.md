@@ -150,3 +150,43 @@ the stylesheet knows which theme is running, so a new colour belongs in the toke
 `color-scheme: light dark` on `:root` is load-bearing — without it the native date picker and
 number spinners stay white boxes on a dark card. The launch screen is deliberately dark in both
 themes; it is a title card, not a surface.
+
+---
+
+## Automatic Step Counting
+
+`TYPE_STEP_COUNTER` — the low-power counter in the phone's own sensor hub. Deliberately **not**
+Samsung Health (partner SDK, Samsung-only, would strand every other phone), **not** Google Fit
+(APIs being retired) and **not** Health Connect (depends on some other health app actually
+writing steps on each device). The raw sensor is present on every modern Android phone and behaves
+identically on a Samsung and a POCO with no account, no companion app and no Play dependency.
+
+| File | Role |
+|---|---|
+| `android/.../StepCounter.java` | Capacitor plugin — `check` / `request` / `read` |
+| `www/tracker-core.js` | `stepTally()` — cumulative reading → steps today |
+
+**The sensor reports steps since boot, not steps today.** `stepTally()` turns one into the other by
+keeping `{ day, base, carried, last }`: a day's total is the delta against the first reading taken
+that day. Its tests are the specification — read them before changing it.
+
+**A reboot zeroes the hardware counter**, which shows up as a reading *lower* than the last one.
+Steps counted before the reboot are banked into `carried` and a fresh baseline starts. Without
+that branch a reboot at lunchtime either wipes the morning or yields a negative delta.
+
+**The permission is requested lazily.** `ACTIVITY_RECOGNITION` only exists from API 29 (below that
+the sensor is readable outright), and `autoSteps` defaults off, so nothing is asked for at first
+launch — flipping the Settings switch is what prompts. `uses-feature ... required="false"` keeps
+the app installable on a phone with no step sensor; `check`/`read` then report `available: false`
+and the UI says steps stay manual.
+
+**Reads happen on launch and on resume only** — no background service, so the app costs no battery
+of its own; the sensor hub counts regardless. **Known ceiling:** steps are attributed to the day
+they are *read*. Go two days without opening the app and the second day's reading only claims what
+accrued since the app last looked. Opening the app once a day — which logging meals already
+requires — keeps it honest. Fixing this properly means Health Connect or a scheduled worker;
+neither is worth it until the gap actually bites.
+
+**Typing in the Steps field wins for that day** (`day.stepsManual`), and clearing it hands the day
+back to the sensor. The baseline advances even on a hand-typed day, so resuming automatic counting
+picks up from the right place instead of claiming every step since boot.

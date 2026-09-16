@@ -146,3 +146,58 @@ assert.equal(C.pct(-5, 100), 0, 'a negative never draws backwards');
 assert.equal(C.pct(500, 100), 100);
 
 console.log('widget blob: all assertions passed');
+
+/* ---- automatic step counting ---- */
+/* The sensor counts from boot, so every case here is about turning a cumulative number into
+   "steps today" without losing any across a midnight or a reboot. */
+
+const D1 = '2026-09-16', D2 = '2026-09-17';
+
+/* First ever reading banks a baseline and claims no steps for it. */
+let st = C.stepTally(null, 5000, D1);
+assert.deepEqual(st, { day: D1, base: 5000, carried: 0, last: 5000, steps: 0 },
+                 'the counter was already at 5000 before the app looked; none of it is today');
+
+/* Walking accrues against that baseline. */
+st = C.stepTally(st, 5300, D1);
+assert.equal(st.steps, 300);
+st = C.stepTally(st, 8000, D1);
+assert.equal(st.steps, 3000);
+
+/* A new day re-baselines rather than carrying yesterday's total. */
+const day2 = C.stepTally(st, 8200, D2);
+assert.equal(day2.steps, 0, 'a new day starts at zero');
+assert.equal(day2.base, 8200);
+st = C.stepTally(day2, 9000, D2);
+assert.equal(st.steps, 800);
+
+/* A reboot resets the hardware counter. The morning must survive it. */
+let r = C.stepTally(null, 1000, D1);
+r = C.stepTally(r, 4000, D1);
+assert.equal(r.steps, 3000, 'three thousand before the reboot');
+r = C.stepTally(r, 50, D1);              // counter restarted, now far below the last reading
+assert.equal(r.steps, 3050, 'banked, not lost, and not negative');
+r = C.stepTally(r, 900, D1);
+assert.equal(r.steps, 3900, 'and it keeps accruing after the reboot');
+
+/* Two reboots in one day still accumulate. */
+r = C.stepTally(r, 10, D1);
+assert.equal(r.steps, 3910);
+r = C.stepTally(r, 200, D1);
+assert.equal(r.steps, 4100);
+
+/* A repeated identical reading is not a reboot and adds nothing. */
+let same = C.stepTally(null, 700, D1);
+same = C.stepTally(same, 1200, D1);
+const before = same.steps;
+same = C.stepTally(same, 1200, D1);
+assert.equal(same.steps, before, 'polling twice must not double-count');
+
+/* Junk from the sensor must never produce NaN or a negative tally. */
+assert.equal(C.stepTally(null, undefined, D1).steps, 0);
+assert.equal(C.stepTally(null, -20, D1).base, 0, 'a negative reading floors at zero');
+const frac = C.stepTally(null, 10.9, D1);
+assert.equal(frac.base, 10, 'the sensor hands back a float; steps are whole');
+assert.ok(Number.isFinite(C.stepTally({ day: D1 }, 500, D1).steps), 'a half-written state still resolves');
+
+console.log('step counting: all assertions passed');
