@@ -513,7 +513,7 @@
     };
     dismissLaunch = dismiss;
     box.addEventListener('click', dismiss);
-    setTimeout(dismiss, 1800);
+    setTimeout(dismiss, 3600);   /* long enough to actually read the quote; a tap still skips it */
   })();
 
   var store = {
