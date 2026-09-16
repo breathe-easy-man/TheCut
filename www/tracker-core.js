@@ -108,6 +108,43 @@
     return (maintenanceFor(day, settings, latestWeight) + stepBonus(day, settings)) - totals(day).cal;
   }
 
+  /* ---- home-screen widget ---- */
+
+  /* A percentage for a bar, clamped: a bar cannot be more than full, and a missing or zero
+     target must not produce Infinity or NaN and blank the widget. */
+  function pct(value, max) {
+    if (!(num(max, 0) > 0)) return 0;
+    return Math.max(0, Math.min(100, Math.round((num(value, 0) / num(max, 0)) * 100)));
+  }
+
+  function fatLost(countedDays, settings, latestWeight) {
+    var deficit = 0;
+    for (var i = 0; i < countedDays.length; i++) {
+      deficit += deficitFor(countedDays[i], settings, latestWeight);
+    }
+    return { deficit: deficit, kg: deficit / KCAL_PER_KG_FAT };
+  }
+
+  /* What the widget renders. Built here rather than in the provider so the numbers are the same
+     ones the app shows and the same ones this file's tests cover — the Java side only draws. */
+  function widgetBlob(day, countedDays, settings, latestWeight, dateStr) {
+    var t = totals(day);
+    var target = targetFor(day, settings, latestWeight);
+    var goal = num(settings.goalKg, 3) || 3;
+    var kg = fatLost(countedDays, settings, latestWeight).kg;
+    return {
+      date: dateStr,
+      bars: [
+        { label: 'FAT LOST', value: kg.toFixed(2) + ' / ' + goal + ' kg',
+          pct: pct(kg, goal), over: false },
+        { label: 'CALORIES', value: t.cal + ' / ' + target.cal,
+          pct: pct(t.cal, target.cal), over: t.cal > target.cal },
+        { label: 'PROTEIN', value: t.protein + ' / ' + target.protein + ' g',
+          pct: pct(t.protein, target.protein), over: false }
+      ]
+    };
+  }
+
   /* ---- meal photo ---- */
 
   var MEAL_PROMPT =
@@ -196,6 +233,9 @@
     totals: totals,
     deficitFor: deficitFor,
     round1: round1,
+    pct: pct,
+    fatLost: fatLost,
+    widgetBlob: widgetBlob,
     mealRequest: mealRequest,
     parseMealResponse: parseMealResponse
   };

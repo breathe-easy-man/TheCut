@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- RemoteViews needs static ids, so all three rows are spelled out rather than generated.
+     Every colour here is a resource, which is what makes the widget follow light/dark with no
+     code: the launcher inflates this in its own process under the current uiMode. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/w_card"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/w_label0"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textColor="@color/w_muted" android:textSize="10sp"
+        android:letterSpacing="0.14" android:textStyle="bold" android:maxLines="1"
+        android:text="FAT LOST" />
+    <TextView
+        android:id="@+id/w_value0"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textColor="@color/w_text" android:textSize="17sp"
+        android:textStyle="bold" android:maxLines="1" android:layout_marginTop="1dp"
+        android:text="—" />
+    <ProgressBar
+        android:id="@+id/w_bar0"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent" android:layout_height="7dp"
+        android:minHeight="7dp" android:maxHeight="7dp"
+        android:layout_marginTop="5dp"
+        android:progressDrawable="@drawable/w_bar_goal"
+        android:max="100" android:progress="0" android:indeterminate="false" />
+
+    <TextView
+        android:id="@+id/w_label1"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textColor="@color/w_muted" android:textSize="10sp"
+        android:letterSpacing="0.14" android:textStyle="bold" android:maxLines="1"
+        android:layout_marginTop="12dp" android:text="CALORIES" />
+    <TextView
+        android:id="@+id/w_value1"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textColor="@color/w_text" android:textSize="17sp"
+        android:textStyle="bold" android:maxLines="1" android:layout_marginTop="1dp"
+        android:text="—" />
+    <ProgressBar
+        android:id="@+id/w_bar1"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent" android:layout_height="7dp"
+        android:minHeight="7dp" android:maxHeight="7dp"
+        android:layout_marginTop="5dp"
+        android:progressDrawable="@drawable/w_bar_cal"
+        android:max="100" android:progress="0" android:indeterminate="false" />
+
+    <TextView
+        android:id="@+id/w_label2"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textColor="@color/w_muted" android:textSize="10sp"
+        android:letterSpacing="0.14" android:textStyle="bold" android:maxLines="1"
+        android:layout_marginTop="12dp" android:text="PROTEIN" />
+    <TextView
+        android:id="@+id/w_value2"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textColor="@color/w_text" android:textSize="17sp"
+        android:textStyle="bold" android:maxLines="1" android:layout_marginTop="1dp"
+        android:text="—" />
+    <ProgressBar
+        android:id="@+id/w_bar2"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent" android:layout_height="7dp"
+        android:minHeight="7dp" android:maxHeight="7dp"
+        android:layout_marginTop="5dp"
+        android:progressDrawable="@drawable/w_bar_protein"
+        android:max="100" android:progress="0" android:indeterminate="false" />
+
+    <TextView
+        android:id="@+id/w_add"
+        android:layout_width="match_parent" android:layout_height="44dp"
+        android:layout_marginTop="14dp"
+        android:background="@drawable/w_fab"
+        android:gravity="center"
+        android:textColor="@color/w_fab_fg" android:textSize="14sp" android:textStyle="bold"
+        android:text="+   Add meal" />
+</LinearLayout>

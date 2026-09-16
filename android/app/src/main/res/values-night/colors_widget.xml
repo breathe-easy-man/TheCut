@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget palette, dark. The card black is the same blue-tinted near-black the budget widget on
+     this home screen uses, so the two read as one stack rather than two apps' idea of black. -->
+<resources>
+    <color name="w_bg">#0A0C0F</color>
+    <color name="w_text">#E9E9EC</color>
+    <color name="w_muted">#7B8087</color>
+    <color name="w_track">#23262B</color>
+    <color name="w_over">#F87171</color>
+    <!-- Lifted off the light values: the same hues wash out against a near-black card. -->
+    <color name="w_bar_goal">#F5A623</color>
+    <color name="w_bar_cal">#4C8DF6</color>
+    <color name="w_bar_protein">#16C88A</color>
+    <color name="w_fab">#F5A623</color>
+    <color name="w_fab_fg">#101216</color>
+</resources>

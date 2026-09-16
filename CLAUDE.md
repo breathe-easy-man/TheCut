@@ -83,3 +83,70 @@ if a change makes those assertions fail, the change is wrong, not the test.
 The API key lives in `settings.apiKey` in `localStorage`, entered on the Settings tab. It is
 **excluded from the backup blob** (`exportable()`) because that text gets pasted around, and it
 is never logged. Keep both properties.
+
+---
+
+## Home-Screen Widget
+
+Three bars — fat loss against the goal, calories and protein against today's targets — over a
+button that opens the app straight into the camera.
+
+| File | Role |
+|---|---|
+| `android/.../CutWidget.java` | `AppWidgetProvider` — renders the blob, owns the two PendingIntents |
+| `android/.../WidgetBridge.java` | Capacitor plugin — the only door between WebView and widget |
+| `android/.../res/layout/cut_widget.xml` | three static rows (RemoteViews needs static ids) |
+| `android/.../res/drawable/w_bar_*.xml` | one layer-list per bar; the fill colour is what differs |
+| `android/.../res/values{,-night}/colors_widget.xml` | the two themes |
+| `www/tracker-core.js` | `widgetBlob()` / `fatLost()` / `pct()` |
+
+**Why a bridge exists:** the widget runs in the launcher's process and cannot read WebView
+`localStorage`. `index.html` pushes an already-computed blob into `SharedPreferences` (file
+`cut_widget`, key `state`) and the widget only renders it. Every number is worked out in JS where
+it is already under test; the Java side stays dumb.
+
+```json
+{ "date": "YYYY-MM-DD",
+  "bars": [ { "label": "FAT LOST", "value": "1.24 / 3 kg", "pct": 41, "over": false }, … ] }
+```
+
+Unlike psych_app's widget this one is **read-only** — it displays and launches, it never writes
+state back. So there is no merge, no signed timestamps, no pull-before-push. Keep it that way: a
+widget that can only launch the app needs none of that machinery.
+
+`syncWidget()` hangs off `save()` rather than each call site — every mutation in the app routes
+through that one writer, so the widget cannot drift.
+
+**Light and dark come free.** Every colour in the layout is a resource, and the launcher inflates
+`cut_widget.xml` in its own process under the current `uiMode`, so `values-night/` is picked up
+with no code and no state. The one exception is the over-target colour on the calorie figure,
+which Java resolves with `ContextCompat.getColor` against the *app's* resources — correct only
+because the app never overrides `uiMode`. If the app ever gains a manual theme switch, that line
+has to move into the layout (two stacked `TextView`s) or it will disagree with the launcher.
+
+**Bars are `ProgressBar` + `setProgressBar()`, not bitmaps.** A layer-list with
+`@android:id/background` and a clipped `@android:id/progress` is what `RemoteViews.setProgressBar()`
+drives, and because each fill is a colour resource the night variant swaps itself. Going over the
+calorie target caps the bar at 100% and turns the figure red rather than overflowing.
+
+**The two taps are distinct PendingIntents with different request codes** (0 = open the app,
+1 = open the camera). `PendingIntent` equality ignores extras, so sharing a request code would
+make the second registration silently rewrite the first and both taps would do the same thing.
+
+**The camera extra is consumed once.** `MainActivity` is `singleTask`, so the launching Intent
+stays attached across resumes; `consumeAction()` removes the extra as it hands it over, and
+`onNewIntent` swaps the stored Intent so a tap on an already-running app is still seen. Without
+either half the camera would re-open on every resume, or never open at all.
+
+**`minResize*` is what makes the launcher offer resize handles.** Left out it defaults to
+`minWidth`/`minHeight` and One UI shows no handles. Metadata changes reach **new** widgets only —
+remove and re-add the widget to see them.
+
+## Theme
+
+The app follows the system light/dark setting through CSS custom properties: one `:root` block of
+tokens and one `@media (prefers-color-scheme: dark)` block that redefines them. Nothing else in
+the stylesheet knows which theme is running, so a new colour belongs in the token list, not inline.
+`color-scheme: light dark` on `:root` is load-bearing — without it the native date picker and
+number spinners stay white boxes on a dark card. The launch screen is deliberately dark in both
+themes; it is a title card, not a surface.

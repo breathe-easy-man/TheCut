@@ -4,4 +4,6 @@
     <string name="title_activity_main">theCut</string>
     <string name="package_name">com.kevins.thecut</string>
     <string name="custom_url_scheme">com.kevins.thecut</string>
+    <string name="widget_label">theCut</string>
+    <string name="widget_description">Fat loss, calories and protein, with a shortcut to photograph a meal.</string>
 </resources>

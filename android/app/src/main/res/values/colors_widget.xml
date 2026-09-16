@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget palette, light. The dark half is values-night/colors_widget.xml and the system picks
+     between them: the launcher inflates cut_widget.xml in its own process with the current
+     uiMode, so the widget follows the phone's theme with no code and no state of its own.
+
+     The three bars are the app's own bar colours, so a glance at the widget and a glance at the
+     Today tab agree: amber for the goal, blue for calories, green for protein. -->
+<resources>
+    <color name="w_bg">#FFFFFF</color>
+    <color name="w_text">#141414</color>
+    <color name="w_muted">#7A7A80</color>
+    <color name="w_track">#E6E6EA</color>
+    <color name="w_over">#DC2626</color>
+    <color name="w_bar_goal">#F59E0B</color>
+    <color name="w_bar_cal">#3B82F6</color>
+    <color name="w_bar_protein">#10B981</color>
+    <color name="w_fab">#F5A623</color>
+    <color name="w_fab_fg">#141414</color>
+</resources>

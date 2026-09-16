@@ -101,3 +101,48 @@ throws(ok({ name: 'x', calories: 500, protein_g: null }), /made no sense/);
 throws(null, /Empty response/);
 
 console.log('tracker-core: all assertions passed');
+
+/* ---- the widget blob ---- */
+
+const today = day({ dayType: 'rest', steps: '', meals: [{ cal: 1840, protein: 142 }] });
+const counted = [
+  day({ meals: [{ cal: 2000, protein: 150 }], maintenance: 2950, proteinTarget: 190 }),
+  day({ meals: [{ cal: 2100, protein: 180 }], maintenance: 2950, proteinTarget: 190 })
+];
+const blob = C.widgetBlob(today, counted, S, 99.7, '2026-09-16');
+
+assert.equal(blob.date, '2026-09-16');
+assert.equal(blob.bars.length, 3, 'three bars, in the order the layout draws them');
+assert.deepEqual(blob.bars.map(b => b.label), ['FAT LOST', 'CALORIES', 'PROTEIN']);
+
+/* 950 + 850 = 1800 kcal banked = 0.23 kg of the 3 kg goal */
+assert.equal(blob.bars[0].value, '0.23 / 3 kg');
+assert.equal(blob.bars[0].pct, 8);
+assert.equal(blob.bars[1].value, '1840 / 2550');
+assert.equal(blob.bars[1].pct, 72);
+assert.equal(blob.bars[1].over, false);
+assert.equal(blob.bars[2].value, '142 / 190 g');
+assert.equal(blob.bars[2].pct, 75);
+
+/* Over target turns the calorie figure red in the widget; the bar just sits full. */
+const overDay = day({ meals: [{ cal: 3000, protein: 142 }] });
+const ob = C.widgetBlob(overDay, counted, S, 99.7, '2026-09-16');
+assert.equal(ob.bars[1].over, true, 'eating past the target is flagged');
+assert.equal(ob.bars[1].pct, 100, 'and the bar caps rather than overflowing');
+
+/* An empty day still produces a renderable blob — the widget must never show NaN. */
+const empty = C.widgetBlob(day({}), [], S, 99.7, '2026-09-16');
+assert.equal(empty.bars[0].pct, 0);
+assert.equal(empty.bars[1].value, '0 / 2550');
+assert.ok(empty.bars.every(b => Number.isFinite(b.pct)), 'every pct is a real number');
+
+/* A zero goal must not divide by zero. */
+const zeroGoal = C.widgetBlob(today, counted, { ...S, goalKg: 0 }, 99.7, '2026-09-16');
+assert.ok(Number.isFinite(zeroGoal.bars[0].pct));
+
+assert.equal(C.pct(5, 0), 0, 'no target means no bar, not Infinity');
+assert.equal(C.pct(50, 100), 50);
+assert.equal(C.pct(-5, 100), 0, 'a negative never draws backwards');
+assert.equal(C.pct(500, 100), 100);
+
+console.log('widget blob: all assertions passed');

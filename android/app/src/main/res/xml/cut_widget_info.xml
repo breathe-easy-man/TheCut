@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- minResize* is what makes the launcher offer resize handles: left out it defaults to
+     minWidth/minHeight, the widget cannot shrink below the size it is placed at, and One UI then
+     shows no handles at all. Three labelled bars plus a 44dp button need roughly four cells of
+     height; the floor is set where the button and one bar still fit.
+     Metadata changes reach NEW widgets only — the launcher caches it per placed instance, so
+     remove and re-add the widget to see them. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="180dp"
+    android:minHeight="180dp"
+    android:minResizeWidth="140dp"
+    android:minResizeHeight="110dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="3"
+    android:description="@string/widget_description"
+    android:initialLayout="@layout/cut_widget"
+    android:previewLayout="@layout/cut_widget"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:updatePeriodMillis="1800000" />
