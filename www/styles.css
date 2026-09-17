@@ -102,6 +102,7 @@
   .nav {
     position: fixed; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 480px; height: 84px;
     background: var(--surface); border-top: 1px solid var(--border);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
     display: grid; grid-template-columns: repeat(4, 1fr); padding: 12px 8px 24px; z-index: 4;
   }
   .nav button {
@@ -142,8 +143,10 @@
   .bar-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 4px; }
   .bar-label .name { font-weight: 600; color: var(--muted); }
   .bar-label .nums { color: var(--muted); }   /* still used by Progress's #goalNums */
-  .bar-fig { font-weight: 700; letter-spacing: -.02em; line-height: 1; margin-bottom: 10px; }
-  .bar-fig.cal-fig { font-size: 40px; }
+  /* Spec's Type scale gives calories 40/700/-.03em and protein 24/700 with no letter-spacing of
+     its own (-.02em is the screen-title value — there is no screen title on Today). */
+  .bar-fig { font-weight: 700; line-height: 1; margin-bottom: 10px; }
+  .bar-fig.cal-fig { font-size: 40px; letter-spacing: -.03em; }
   .bar-fig.pro-fig { font-size: 24px; }
   .bar-bg { background: var(--border-faint); border-radius: 6px; overflow: hidden; }
   .bar-bg.cal-bg { height: 10px; }
@@ -191,17 +194,17 @@
     color: var(--text-faint); margin: 16px 0 2px; }
 
   .meal-item {
-    background: var(--surface); border: 1px solid var(--border-soft); border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
     padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
   }
   .meal-item .info { flex: 1; padding-right: 8px; }
   .meal-item .mname { font-size: 14px; font-weight: 600; }
-  .meal-item .mnums { font-size: 12px; color: var(--text-mid); margin-top: 2px; }
+  .meal-item .mnums { font-size: 12px; color: var(--muted); margin-top: 2px; }
   .del-btn {
-    background: var(--surface-3); border: 1px solid var(--border-soft); color: var(--text-dim);
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--dim);
     font-size: 13px; padding: 6px 10px; border-radius: 6px; cursor: pointer;
   }
-  .empty { text-align: center; color: var(--text-dim); font-size: 13px; padding: 20px 0; }
+  .empty { text-align: center; color: var(--dim); font-size: 13px; padding: 20px 0; }
 
   .add-form input {
     width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;
@@ -211,12 +214,12 @@
   .row2 { display: flex; gap: 8px; }
   .row2 input { flex: 1; }
   .add-btn {
-    width: 100%; padding: 12px; background: var(--ink); color: var(--ink-fg); border: none;
+    width: 100%; padding: 12px; background: var(--ink-fill); color: var(--ink-fill-fg); border: none;
     border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
   }
   .photo-btn {
     width: 100%; padding: 12px; background: var(--surface); color: var(--text);
-    border: 1px solid var(--ink);
+    border: 1px solid var(--ink-fill);
     border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 10px;
   }
   .photo-btn:disabled { opacity: .5; cursor: default; }

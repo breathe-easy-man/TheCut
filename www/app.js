@@ -529,7 +529,7 @@
     if (!day.stepsManual) syncSteps();
   });
   document.getElementById('weightInput').addEventListener('change', function(e) {
-    getDay(currentDate).weight = e.target.value; save();
+    getDay(currentDate).weight = e.target.value; save(); render();
   });
   document.getElementById('goalInput').addEventListener('change', function(e) {
     settings.goalKg = Number(e.target.value) || 3; save(); render();
