@@ -201,3 +201,107 @@ assert.equal(frac.base, 10, 'the sensor hands back a float; steps are whole');
 assert.ok(Number.isFinite(C.stepTally({ day: D1 }, 500, D1).steps), 'a half-written state still resolves');
 
 console.log('step counting: all assertions passed');
+
+/* ---- quick add ---- */
+
+const meal = (name, cal, protein) => ({ name, cal, protein });
+const D = (n) => '2026-09-' + String(n).padStart(2, '0');
+
+const qaDays = {
+  [D(10)]: { meals: [meal('Oats', 400, 20), meal('Chicken rice', 700, 55)] },
+  [D(11)]: { meals: [meal('oats  ', 420, 21)] },
+  [D(12)]: { meals: [meal('Oats', 410, 22), meal('Chicken Rice', 720, 56), meal('Shake', 200, 40)] }
+};
+
+const qa = C.quickAdds(qaDays, 4, D(12));
+assert.equal(qa[0].name, 'Oats', 'the most-logged name comes first');
+assert.equal(qa[0].cal, 410, 'and carries its most recent figures, not its first');
+assert.equal(qa[0].protein, 22);
+assert.equal(qa[1].name, 'Chicken Rice', 'case and trailing space do not split a name');
+assert.equal(qa.length, 3, 'three distinct names logged, three chips');
+assert.equal(C.quickAdds(qaDays, 2, D(12)).length, 2, 'n caps the list');
+assert.deepEqual(C.quickAdds({}, 4, D(12)), [], 'no history, no chips');
+
+/* Outside the 30-day window a name stops counting, but thin history still fills the list. */
+const qaOld = {
+  '2026-01-05': { meals: [meal('Old soup', 300, 10)] },
+  [D(12)]: { meals: [meal('Shake', 200, 40)] }
+};
+const qaFallback = C.quickAdds(qaOld, 4, D(12));
+assert.equal(qaFallback[0].name, 'Shake', 'the recent name ranks first');
+assert.equal(qaFallback[1].name, 'Old soup', 'and an older one fills the gap rather than leaving it empty');
+
+/* A future day must never be counted. */
+assert.equal(C.quickAdds({ [D(20)]: { meals: [meal('Tomorrow', 1, 1)] } }, 4, D(12)).length, 0);
+
+/* ---- weight series ---- */
+
+const wDays = {
+  [D(5)]:  { weight: 100.4 },
+  [D(6)]:  { weight: 100 },
+  [D(8)]:  { weight: 99.4 },
+  [D(10)]: { weight: 99 },
+  [D(12)]: { weight: 98.6 },
+  [D(11)]: { meals: [] }
+};
+
+const wAll = C.weightSeries(wDays, 'all', D(12));
+assert.equal(wAll.points.length, 5, 'only days with a weight become points');
+assert.deepEqual(wAll.points[0], { date: D(5), kg: 100.4 }, 'points run oldest first');
+assert.equal(wAll.min, 98.6);
+assert.equal(wAll.max, 100.4);
+assert.ok(wAll.trend.from > wAll.trend.to, 'the trend falls over a cut');
+
+/* The 7d window is the last seven days INCLUSIVE — Sep 6 to Sep 12 — so Sep 5 drops off
+   and Sep 6 does not. Off-by-one here would silently widen every window by a day. */
+const w7 = C.weightSeries(wDays, '7d', D(12));
+assert.equal(w7.points.length, 4, 'the seventh day back is still in the window');
+assert.equal(w7.points[0].date, D(6), 'the eighth is not');
+
+assert.deepEqual(C.weightSeries({}, 'all', D(12)),
+                 { points: [], trend: null, min: 0, max: 0 }, 'an empty chart must not be NaN');
+assert.equal(C.weightSeries({ [D(12)]: { weight: 99 } }, 'all', D(12)).trend, null,
+             'one point is not a trend');
+
+/* A flat run has a trend, and it is flat — not a divide-by-zero. */
+const flat = C.weightSeries({ [D(10)]: { weight: 99 }, [D(12)]: { weight: 99 } }, 'all', D(12));
+assert.equal(flat.trend.from, 99);
+assert.equal(flat.trend.to, 99);
+
+/* ---- day strip ---- */
+
+const strip = C.dayStrip({ [D(10)]: { done: true }, [D(12)]: { meals: [meal('x', 1, 1)] } }, D(12), D(12));
+assert.equal(strip.length, 7, 'seven days');
+assert.equal(strip[6].date, D(12), 'the selected day is last');
+assert.equal(strip[0].date, D(6), 'the window is the six days before it');
+assert.equal(strip[6].status, 'today');
+assert.equal(strip[4].status, 'finished', 'a finished day shows finished');
+assert.equal(strip[5].status, 'empty', 'a day with nothing on it shows empty');
+assert.equal(strip[6].label, 'Sat');
+assert.equal(strip[6].dayNum, 12);
+
+/* Selecting an older day re-anchors the strip, and today is then off it. */
+const past = C.dayStrip({ [D(10)]: { done: true } }, D(10), D(12));
+assert.equal(past[6].date, D(10));
+assert.equal(past[6].status, 'finished', 'the selected past day is not mislabelled today');
+
+/* ---- weight as of a date ---- */
+
+assert.equal(C.weightAsOf(wDays, D(12)), 98.6, 'the latest weight on or before the date');
+assert.equal(C.weightAsOf(wDays, D(9)), 99.4, 'not a later one');
+assert.equal(C.weightAsOf(wDays, D(1)), 0, 'nothing logged yet falls through to the settings weight');
+assert.equal(C.maintenanceCal(S, C.weightAsOf(wDays, D(1))), 2950,
+             'and bodyweight() supplies that fallback, as it does for latestWeight()');
+
+/* ---- should finalize ---- */
+
+const withMeal = { meals: [meal('x', 500, 30)] };
+assert.equal(C.shouldFinalize(withMeal, D(11), D(12)), true, 'a past day with a meal finishes');
+assert.equal(C.shouldFinalize(withMeal, D(12), D(12)), false, 'today never finishes');
+assert.equal(C.shouldFinalize(withMeal, D(13), D(12)), false, 'nor does a future day');
+assert.equal(C.shouldFinalize({ meals: [], weight: 99 }, D(11), D(12)), false,
+             'a day with no meals is skipped, not scored as a full-maintenance deficit');
+assert.equal(C.shouldFinalize({ ...withMeal, done: true }, D(11), D(12)), false, 'already finished');
+assert.equal(C.shouldFinalize(null, D(11), D(12)), false);
+
+console.log('redesign core: all assertions passed');

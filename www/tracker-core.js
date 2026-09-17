@@ -246,6 +246,163 @@
     };
   }
 
+  /* ---- dates (UTC so a DST boundary cannot shift a day) ---- */
+
+  var WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  function addDays(dateStr, delta) {
+    var p = String(dateStr).split('-');
+    var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+    d.setUTCDate(d.getUTCDate() + delta);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function dayDiff(a, b) {
+    return (Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000;
+  }
+
+  function normName(s) {
+    return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  /* The four most-logged meal names over the last 30 days, each carrying its most recent
+     figures. Ties break towards the more recent name, which is also what makes the thin-history
+     case work: with one log each, "most logged" degrades into "most recent" for free. If the
+     window still cannot fill n, older history is walked backwards to top it up — a new user
+     should not meet four empty tiles. */
+  function quickAdds(days, n, todayStr) {
+    var want = num(n, 4), cutoff = todayStr ? addDays(todayStr, -29) : null;
+    var byName = {}, order = [], dates = Object.keys(days || {}).sort(), i, j;
+
+    for (i = 0; i < dates.length; i++) {
+      if (cutoff && dates[i] < cutoff) continue;
+      if (todayStr && dates[i] > todayStr) continue;
+      var meals = (days[dates[i]] && days[dates[i]].meals) || [];
+      for (j = 0; j < meals.length; j++) {
+        var key = normName(meals[j].name);
+        if (!key) continue;
+        if (!byName[key]) { byName[key] = { count: 0 }; order.push(key); }
+        var e = byName[key];
+        e.count++;
+        /* oldest-first iteration means the last write wins: the most recent spelling and figures */
+        e.name = String(meals[j].name).trim();
+        e.cal = Math.round(num(meals[j].cal, 0));
+        e.protein = round1(num(meals[j].protein, 0));
+        e.seen = dates[i];
+      }
+    }
+
+    var list = [];
+    for (i = 0; i < order.length; i++) list.push(byName[order[i]]);
+    list.sort(function (a, b) {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.seen < b.seen ? 1 : (a.seen > b.seen ? -1 : 0);
+    });
+
+    var out = [], have = {};
+    for (i = 0; i < list.length && out.length < want; i++) {
+      have[normName(list[i].name)] = 1;
+      out.push({ name: list[i].name, cal: list[i].cal, protein: list[i].protein });
+    }
+
+    /* thin history: reach back past the window, most recent first */
+    for (i = dates.length - 1; i >= 0 && out.length < want; i--) {
+      if (todayStr && dates[i] > todayStr) continue;
+      var old = (days[dates[i]] && days[dates[i]].meals) || [];
+      for (j = old.length - 1; j >= 0 && out.length < want; j--) {
+        var k = normName(old[j].name);
+        if (!k || have[k]) continue;
+        have[k] = 1;
+        out.push({
+          name: String(old[j].name).trim(),
+          cal: Math.round(num(old[j].cal, 0)),
+          protein: round1(num(old[j].protein, 0))
+        });
+      }
+    }
+    return out;
+  }
+
+  /* Logged weights in the window, plus a least-squares trend line given as its two endpoints.
+     x is the day offset from the first point, not the array index, so a gap in logging tilts
+     the line the way it actually happened. */
+  function weightSeries(days, range, todayStr) {
+    var cutoff = null;
+    if (range === '7d') cutoff = addDays(todayStr, -6);
+    else if (range === '30d') cutoff = addDays(todayStr, -29);
+
+    var dates = Object.keys(days || {}).sort(), pts = [], i;
+    for (i = 0; i < dates.length; i++) {
+      var w = num(days[dates[i]] && days[dates[i]].weight, 0);
+      if (!(w > 0)) continue;
+      if (cutoff && dates[i] < cutoff) continue;
+      if (todayStr && dates[i] > todayStr) continue;
+      pts.push({ date: dates[i], kg: w });
+    }
+
+    var min = 0, max = 0, trend = null;
+    if (pts.length) {
+      min = max = pts[0].kg;
+      for (i = 1; i < pts.length; i++) {
+        if (pts[i].kg < min) min = pts[i].kg;
+        if (pts[i].kg > max) max = pts[i].kg;
+      }
+    }
+
+    if (pts.length >= 2) {
+      var n = pts.length, sx = 0, sy = 0, sxx = 0, sxy = 0, x;
+      for (i = 0; i < n; i++) {
+        x = dayDiff(pts[0].date, pts[i].date);
+        sx += x; sy += pts[i].kg; sxx += x * x; sxy += x * pts[i].kg;
+      }
+      var den = n * sxx - sx * sx;
+      if (den !== 0) {
+        var slope = (n * sxy - sx * sy) / den;
+        var intercept = (sy - slope * sx) / n;
+        var span = dayDiff(pts[0].date, pts[n - 1].date);
+        trend = { from: round1(intercept), to: round1(intercept + slope * span) };
+      }
+    }
+
+    return { points: pts, trend: trend, min: min, max: max };
+  }
+
+  /* Seven days ending on the selected one, so picking an older date re-anchors the strip
+     instead of scrolling away from the selection. */
+  function dayStrip(days, date, todayStr) {
+    var out = [], start = addDays(date, -6), i;
+    for (i = 0; i < 7; i++) {
+      var d = addDays(start, i);
+      var day = (days || {})[d];
+      var dt = new Date(d + 'T00:00:00Z');
+      var status = 'empty';
+      if (d === todayStr) status = 'today';
+      else if (day && day.done) status = 'finished';
+      out.push({ date: d, label: WEEKDAYS[dt.getUTCDay()], dayNum: dt.getUTCDate(), status: status });
+    }
+    return out;
+  }
+
+  /* The weight a past day should be judged against. 0 means none was logged by then, which
+     bodyweight() turns into the settings weight — the same fallback latestWeight() relies on. */
+  function weightAsOf(days, date) {
+    var dates = Object.keys(days || {}).sort(), best = 0, i;
+    for (i = 0; i < dates.length; i++) {
+      if (dates[i] > date) break;
+      var w = num(days[dates[i]].weight, 0);
+      if (w > 0) best = w;
+    }
+    return best;
+  }
+
+  /* A day finishes once it is strictly past and has at least one meal. A day with no meals is
+     never finished: scoring it would invent a full day of deficit for a weekend away. */
+  function shouldFinalize(day, dateStr, todayStr) {
+    if (!day || day.done === true) return false;
+    if (!(String(dateStr) < String(todayStr))) return false;
+    return !!(day.meals && day.meals.length);
+  }
+
   root.TrackerCore = {
     DEFAULTS: DEFAULTS,
     KCAL_PER_KG_FAT: KCAL_PER_KG_FAT,
@@ -267,7 +424,12 @@
     fatLost: fatLost,
     widgetBlob: widgetBlob,
     mealRequest: mealRequest,
-    parseMealResponse: parseMealResponse
+    parseMealResponse: parseMealResponse,
+    quickAdds: quickAdds,
+    weightSeries: weightSeries,
+    dayStrip: dayStrip,
+    weightAsOf: weightAsOf,
+    shouldFinalize: shouldFinalize
   };
 
 })(typeof globalThis !== 'undefined' ? globalThis : window);
