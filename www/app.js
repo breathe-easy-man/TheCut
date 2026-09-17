@@ -263,14 +263,15 @@
     document.getElementById('proRemaining').textContent =
       proLeft > 0 ? (proLeft + 'g protein left') : 'protein target hit';
 
+    /* The sub line carries the day's muscle group; the mark and the accent fill already say
+       whether it is done, so the group does not have to compete with a "tap" hint. */
+    document.getElementById('workoutSub').textContent = C.workoutSplit(cache, currentDate);
     if (day.dayType === 'training') {
       document.getElementById('workoutTile').className = 'tile active';
       document.getElementById('workoutMark').textContent = '✓';
-      document.getElementById('workoutSub').textContent = 'Done';
     } else {
       document.getElementById('workoutTile').className = 'tile';
       document.getElementById('workoutMark').textContent = '—';
-      document.getElementById('workoutSub').textContent = 'Tap if done';
     }
 
     document.getElementById('stepsInput').value = day.steps || '';

@@ -429,8 +429,29 @@
     return !!(day.meals && day.meals.length);
   }
 
+  /* The rolling split, in rotation order. Four slots, so each group comes round every fourth
+     workout — roughly 1.75 sessions a week, which beats training a group once a week. */
+  var MUSCLE_GROUPS = ['Biceps & back', 'Delts & chest', 'Legs', 'Core'];
+
+  /* Which group a given day belongs to. The rotation advances per WORKOUT, not per calendar day:
+     a day off does not burn a slot, so missing Wednesday postpones legs rather than skipping them.
+     Derived from history rather than stored on the day — unlike maintenance/proteinTarget, a label
+     feeds no arithmetic, so recomputing it cannot corrupt a past day's deficit, and keeping it out
+     of the day object leaves the backup blob byte-compatible with the original tracker.
+     Counts strictly earlier training days, so marking today done never renames today's tile. */
+  function workoutSplit(days, date) {
+    var dates = Object.keys(days || {}).sort(), n = 0, i;
+    for (i = 0; i < dates.length; i++) {
+      if (dates[i] >= date) break;
+      if (days[dates[i]].dayType === 'training') n++;
+    }
+    return MUSCLE_GROUPS[n % MUSCLE_GROUPS.length];
+  }
+
   root.TrackerCore = {
     DEFAULTS: DEFAULTS,
+    MUSCLE_GROUPS: MUSCLE_GROUPS,
+    workoutSplit: workoutSplit,
     KCAL_PER_KG_FAT: KCAL_PER_KG_FAT,
     num: num,
     withDefaults: withDefaults,

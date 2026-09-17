@@ -328,4 +328,44 @@ assert.equal(C.shouldFinalize({ meals: [], weight: 99 }, D(11), D(12)), false,
 assert.equal(C.shouldFinalize({ ...withMeal, done: true }, D(11), D(12)), false, 'already finished');
 assert.equal(C.shouldFinalize(null, D(11), D(12)), false);
 
+/* ---- the rolling workout split (Today's Workout tile) ---- */
+
+const train = (n) => ({ [D(n)]: { dayType: 'training', meals: [] } });
+const rest = (n) => ({ [D(n)]: { dayType: 'rest', meals: [] } });
+
+assert.deepEqual(C.MUSCLE_GROUPS, ['Biceps & back', 'Delts & chest', 'Legs', 'Core'],
+                 'the four slots, in rotation order');
+
+assert.equal(C.workoutSplit({}, D(12)), 'Biceps & back', 'an empty history starts at the first slot');
+assert.equal(C.workoutSplit(null, D(12)), 'Biceps & back', 'no history object at all');
+
+/* One prior workout puts today on slot two, and so on round the cycle. */
+assert.equal(C.workoutSplit({ ...train(8) }, D(12)), 'Delts & chest', 'one prior workout');
+assert.equal(C.workoutSplit({ ...train(8), ...train(9) }, D(12)), 'Legs', 'two');
+assert.equal(C.workoutSplit({ ...train(8), ...train(9), ...train(10) }, D(12)), 'Core', 'three');
+assert.equal(C.workoutSplit({ ...train(8), ...train(9), ...train(10), ...train(11) }, D(12)),
+             'Biceps & back', 'the fourth workout wraps back to the first slot');
+
+/* The rotation follows training, not the calendar: a gap does not skip a group. */
+assert.equal(C.workoutSplit({ ...train(1), ...train(2) }, D(30)), 'Legs',
+             'a 28-day gap still resumes at the next slot, not further along');
+assert.equal(C.workoutSplit({ ...train(8), ...rest(9), ...rest(10), ...rest(11) }, D(12)),
+             'Delts & chest', 'rest days do not advance the rotation');
+assert.equal(C.workoutSplit({ ...train(8), [D(9)]: { meals: [] } }, D(12)), 'Delts & chest',
+             'a day with no dayType at all does not advance it either');
+
+/* Today's own mark must not move its label — otherwise tapping Done would rename the tile. */
+const upTo11 = { ...train(8), ...train(9), ...train(10) };
+assert.equal(C.workoutSplit({ ...upTo11, ...train(12) }, D(12)),
+             C.workoutSplit(upTo11, D(12)),
+             'marking today done does not change which group today is');
+
+/* A past day reads as the group it actually was, not as today's position. */
+assert.equal(C.workoutSplit({ ...train(8), ...train(9), ...train(10) }, D(9)), 'Delts & chest',
+             'a past day is judged by the workouts before IT, not before today');
+
+/* Days strictly after the date are ignored, however they are marked. */
+assert.equal(C.workoutSplit({ ...train(20), ...train(21) }, D(12)), 'Biceps & back',
+             'later workouts do not count toward an earlier day');
+
 console.log('redesign core: all assertions passed');
