@@ -71,6 +71,10 @@
   var cache = {};
   var settings = C.withDefaults({});
   var currentDate = todayStr();
+  /* Tracks what "today" was as of the last time we checked, so resume can tell a day that
+     drifted stale (the WebView outlived the calendar day) from a day the user picked on
+     purpose. See the visibilitychange handler below. */
+  var lastKnownToday = currentDate;
   var currentTab = 'day';
   var flash = '';
 
@@ -165,8 +169,15 @@
       var day = getDay(t);
       /* The baseline advances even on a hand-typed day, so clearing the field later resumes
          from the right place instead of claiming every step since boot. */
-      day.stepTally = C.stepTally(day.stepTally, r.value, t);
-      if (!day.stepsManual) day.steps = String(day.stepTally.steps);
+      var tally = C.stepTally(day.stepTally, r.value, t);
+      var steps = day.stepsManual ? day.steps : String(tally.steps);
+      /* This runs every 10s while visible (startStepPolling). Most ticks see the same sensor
+         value, so skip save()/render() when nothing actually changed — otherwise the unconditional
+         repaint reverts an in-place meal edit, closes an open swipe-reveal, or rewrites a
+         half-typed Settings field underneath the user. */
+      if (steps === day.steps && JSON.stringify(tally) === JSON.stringify(day.stepTally)) return;
+      day.stepTally = tally;
+      day.steps = steps;
       save();
       render();
     }).catch(function() {});
@@ -243,6 +254,9 @@
             + '</button>';
     }
     el.innerHTML = html;
+    /* dayStrip ends on currentDate (see dayStrip's own comment), so browsing to a past day
+       pushes today off the right edge with nothing on screen to get back to it. */
+    document.getElementById('todayBtn').hidden = (currentDate === todayStr());
   }
 
   function renderDay() {
@@ -782,6 +796,11 @@
     render();
   });
 
+  document.getElementById('todayBtn').addEventListener('click', function() {
+    currentDate = todayStr();
+    render();
+  });
+
   document.getElementById('workoutTile').addEventListener('click', function() {
     var day = getDay(currentDate);
     day.dayType = (day.dayType === 'training') ? 'rest' : 'training';
@@ -974,6 +993,11 @@
 
   document.addEventListener('visibilitychange', function() {
     if (document.hidden) { stopStepPolling(); return; }
+    /* Android keeps the WebView alive for days, so currentDate can go stale across midnight
+       while the app sits backgrounded. Only follow the clock if the screen was showing "today"
+       when it went to the background — a day the user deliberately navigated to stays put. */
+    if (currentDate === lastKnownToday && lastKnownToday !== todayStr()) currentDate = todayStr();
+    lastKnownToday = todayStr();
     /* finalizeDays() can mutate and save, and nothing else in this branch repaints: syncSteps()
        returns immediately while autoSteps is off, which is the default. Boot renders explicitly
        for the same reason. Without this, resuming after midnight leaves yesterday on screen

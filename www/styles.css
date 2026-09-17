@@ -158,7 +158,6 @@
   .bar-row { margin-bottom: 16px; }
   .bar-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 4px; }
   .bar-label .name { font-weight: 600; color: var(--muted); }
-  .bar-label .nums { color: var(--muted); }   /* still used by Progress's #goalNums */
   /* Spec's Type scale gives calories 40/700/-.03em and protein 24/700 with no letter-spacing of
      its own (-.02em is the screen-title value — there is no screen title on Today). */
   .bar-fig { font-weight: 700; line-height: 1; margin-bottom: 10px; }
@@ -170,7 +169,6 @@
   .bar-fill { height: 100%; border-radius: 6px; }
   .bar-fill.cal { background: var(--accent); }
   .bar-fill.protein { background: var(--ink-fill); }
-  .bar-fill.goal { background: var(--accent); }
   .bar-fill.over { background: var(--over); }
   .remaining { font-size: 12px; color: var(--muted); }
 
