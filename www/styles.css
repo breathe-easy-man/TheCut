@@ -1,0 +1,247 @@
+  @font-face {
+    font-family: 'IBM Plex Sans';
+    src: url('fonts/ibm-plex-sans-400.woff2') format('woff2');
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'IBM Plex Sans';
+    src: url('fonts/ibm-plex-sans-600.woff2') format('woff2');
+    font-weight: 600; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'IBM Plex Sans';
+    src: url('fonts/ibm-plex-sans-700.woff2') format('woff2');
+    font-weight: 700; font-style: normal; font-display: swap;
+  }
+
+  /* One palette, two themes. Every colour below is a token so the dark half is a single block
+     that redefines them; nothing else in the stylesheet knows which theme is running.
+     color-scheme is what makes the native date picker and number spinners render dark too —
+     without it they stay white boxes on a dark card. */
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f9fafb;
+    --border: #e5e7eb;
+    --border-faint: #f3f4f6;
+    --text: #111827;
+    --muted: #6b7280;
+    --dim: #9ca3af;
+    --accent: #f97316;
+    --accent-tint: #fff7ed;
+    --accent-tint-fg: #c2410c;
+    --ok: #10b981;
+    --over: #ef4444;
+    --ink-fill: #111827;
+    --ink-fill-fg: #ffffff;
+    --hero-bg: #111827;
+    --hero-fg: #ffffff;
+    --hero-muted: #9ca3af;
+    --danger-text: #b91c1c;
+    --danger-border: #fecaca;
+    --ok-bg: #f0fdf4;
+    --ok-text: #166534;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a0c0f;
+      --surface: #14171b;
+      --surface-2: #1a1e23;
+      --border: #2c3138;
+      --border-faint: #23272e;
+      --text: #e9e9ec;
+      --muted: #a2a8b0;
+      --dim: #7b8087;
+      --accent: #fb923c;
+      --accent-tint: #2a1c0e;
+      --accent-tint-fg: #fbbf77;
+      --ok: #16c88a;
+      --over: #f87171;
+      --ink-fill: #e9e9ec;
+      --ink-fill-fg: #0a0c0f;
+      --hero-bg: #1a1e23;
+      --hero-fg: #e9e9ec;
+      --hero-muted: #8a9099;
+      --danger-text: #f87171;
+      --danger-border: #5a2222;
+      --ok-bg: #0f2a1b;
+      --ok-text: #6ee7a8;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'tnum';
+    color: var(--text);
+    background: var(--bg);
+  }
+  #app { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; }
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Launch screen. Plain markup so it paints before any script runs; removed by JS on tap
+     or after a beat. Always dark in both themes — it is a title card, not a surface. */
+  #launch {
+    position: fixed; inset: 0; z-index: 100; background: #111; color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 32px; text-align: center; transition: opacity .45s ease;
+  }
+  #launch.gone { opacity: 0; pointer-events: none; }
+  #launch .lname { font-size: 40px; font-weight: 800; letter-spacing: -1.5px; }
+  #launch .lrule { width: 34px; height: 3px; background: #10b981; margin: 18px 0 22px; border-radius: 2px; }
+  #launch .lquote { font-size: 15px; line-height: 1.55; font-style: italic; color: #e8e8e8; max-width: 330px; }
+  #launch .lauthor { font-size: 12px; color: #888; margin-top: 12px; text-transform: uppercase; letter-spacing: 1px; }
+
+  .tabs { display: flex; gap: 8px; margin: 12px 0; }
+  .tabs button {
+    flex: 1; padding: 10px 6px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); font-size: 14px; font-weight: 600; color: var(--text-mid); cursor: pointer;
+  }
+  .tabs button.active { background: var(--ink); color: var(--ink-fg); border-color: var(--ink); }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .date-row { display: flex; align-items: center; gap: 8px; }
+  .navbtn {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+    padding: 10px 14px; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  .navbtn:active { background: var(--surface-3); }
+  #dateInput {
+    flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; text-align: center; background: var(--surface); color: var(--text); font-family: inherit;
+  }
+  .today-btn {
+    width: 100%; padding: 8px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--text-mid); margin-top: 8px;
+  }
+  .daylabel { text-align: center; font-size: 13px; color: var(--text-mid); margin-top: 8px; font-weight: 600; }
+
+  .day-toggle { display: flex; gap: 8px; margin-top: 10px; }
+  .day-toggle button {
+    flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); font-size: 13px; font-weight: 600; color: var(--text-mid); cursor: pointer;
+  }
+  .day-toggle button.active { background: var(--ink); color: var(--ink-fg); border-color: var(--ink); }
+
+  /* Whole row is a label, so tapping anywhere on it flips the checkbox */
+  .done-row {
+    display: flex; align-items: center; gap: 10px; margin-top: 10px;
+    background: var(--surface); border: 1px solid var(--border-soft); border-radius: 10px; padding: 14px;
+    cursor: pointer; user-select: none;
+  }
+  .done-row:active { background: var(--surface-3); }
+  .done-row .txt { flex: 1; font-size: 13px; font-weight: 600; }
+  .switch { position: relative; width: 46px; height: 26px; flex: none; pointer-events: none; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; }
+  .slider {
+    position: absolute; inset: 0; background: var(--switch-off);
+    border-radius: 26px; transition: .2s;
+  }
+  .slider:before {
+    content: ""; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px;
+    background: #fff; border-radius: 50%; transition: .2s;
+  }
+  .switch input:checked ~ .slider { background: var(--protein); }
+  .switch input:checked ~ .slider:before { transform: translateX(20px); }
+
+  .card { background: var(--surface); border-radius: 12px; padding: 14px; margin: 14px 0; border: 1px solid var(--border-soft); }
+  .card h3 { font-size: 14px; margin-bottom: 12px; }
+
+  .bar-row { margin-bottom: 12px; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+  .bar-label .name { font-weight: 600; }
+  .bar-label .nums { color: var(--text-mid); }
+  .bar-bg { background: var(--track); border-radius: 6px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; }
+  .bar-fill.cal { background: var(--cal); }
+  .bar-fill.protein { background: var(--protein); }
+  .bar-fill.goal { background: var(--goal); }
+  .bar-fill.over { background: var(--over); }
+  .remaining { font-size: 12px; color: var(--text-mid); margin-top: 3px; }
+
+  .steps-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .steps-row label { font-size: 13px; color: var(--text-mid); flex: 1; }
+  .steps-row input[type=number], .steps-row input[type=text], .steps-row input[type=password] {
+    width: 110px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 13px; font-family: inherit; background: var(--surface); color: var(--text);
+  }
+  .steps-row input[readonly] { background: var(--surface-3); color: var(--text-muted); }
+  .steps-row input.wide { width: 100%; }
+  .hint { font-size: 11px; color: var(--text-dim); margin-top: 6px; line-height: 1.4; }
+  .derived {
+    font-size: 12px; color: var(--ok-text); background: var(--ok-bg); border: 1px solid var(--ok-border);
+    border-radius: 8px; padding: 8px 10px; margin-top: 10px; line-height: 1.5;
+  }
+  .seg { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+    color: var(--text-faint); margin: 16px 0 2px; }
+
+  .meal-item {
+    background: var(--surface); border: 1px solid var(--border-soft); border-radius: 10px;
+    padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .meal-item .info { flex: 1; padding-right: 8px; }
+  .meal-item .mname { font-size: 14px; font-weight: 600; }
+  .meal-item .mnums { font-size: 12px; color: var(--text-mid); margin-top: 2px; }
+  .del-btn {
+    background: var(--surface-3); border: 1px solid var(--border-soft); color: var(--text-dim);
+    font-size: 13px; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+  }
+  .empty { text-align: center; color: var(--text-dim); font-size: 13px; padding: 20px 0; }
+
+  .add-form input {
+    width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; margin-bottom: 8px; font-family: inherit;
+    background: var(--surface); color: var(--text);
+  }
+  .row2 { display: flex; gap: 8px; }
+  .row2 input { flex: 1; }
+  .add-btn {
+    width: 100%; padding: 12px; background: var(--ink); color: var(--ink-fg); border: none;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .photo-btn {
+    width: 100%; padding: 12px; background: var(--surface); color: var(--text);
+    border: 1px solid var(--ink);
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+  }
+  .photo-btn:disabled { opacity: .5; cursor: default; }
+  .ai-err { color: var(--danger); }
+
+  .stat-grid { display: flex; gap: 8px; }
+  .stat { flex: 1; background: var(--surface-2); border-radius: 10px; padding: 10px; text-align: center; }
+  .stat .big { font-size: 18px; font-weight: 700; }
+  .stat .lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; color: var(--text-muted); font-weight: 600; padding: 6px 4px; border-bottom: 1px solid var(--border-soft); }
+  td { padding: 7px 4px; border-bottom: 1px solid var(--border-faint); }
+  td.num { text-align: right; }
+  .pos { color: var(--protein); }
+  .neg { color: var(--over); }
+  .pending { color: var(--pending); font-size: 11px; }
+
+  .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); font-size: 12px;
+    padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; line-height: 1.4; }
+  .ok { background: var(--ok-bg); border: 1px solid var(--ok-border); color: var(--ok-text); font-size: 12px;
+    padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; }
+
+  .io-row { display: flex; gap: 8px; }
+  .io-row button {
+    flex: 1; padding: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  #importArea {
+    width: 100%; height: 90px; margin-top: 8px; padding: 8px; font-size: 11px;
+    border: 1px solid var(--border); border-radius: 8px; font-family: monospace;
+    display: none; background: var(--surface); color: var(--text);
+  }
+  .danger { color: var(--danger); border-color: var(--danger-border) !important; }
+  .move-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .move-row input { flex: 1; padding: 9px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 13px; font-family: inherit; background: var(--surface); color: var(--text); }
+  .move-row button { padding: 9px 12px; border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
