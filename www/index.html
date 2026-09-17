@@ -219,6 +219,18 @@
         <input type="number" id="setTrainingBump" data-set="trainingBump" inputmode="numeric">
       </div>
 
+      <div class="seg">Training schedule</div>
+      <div class="week" id="weekDays">
+        <button type="button" class="wday" data-day="1" aria-pressed="false" aria-label="Monday">M</button>
+        <button type="button" class="wday" data-day="2" aria-pressed="false" aria-label="Tuesday">T</button>
+        <button type="button" class="wday" data-day="3" aria-pressed="false" aria-label="Wednesday">W</button>
+        <button type="button" class="wday" data-day="4" aria-pressed="false" aria-label="Thursday">T</button>
+        <button type="button" class="wday" data-day="5" aria-pressed="false" aria-label="Friday">F</button>
+        <button type="button" class="wday" data-day="6" aria-pressed="false" aria-label="Saturday">S</button>
+        <button type="button" class="wday" data-day="0" aria-pressed="false" aria-label="Sunday">S</button>
+      </div>
+      <div class="hint" id="weekHint"></div>
+
       <div class="seg">Steps</div>
       <div class="steps-row">
         <label for="setStepBaseline">Baseline steps</label>

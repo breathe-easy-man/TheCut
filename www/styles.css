@@ -206,6 +206,16 @@
     font-size: 12px; color: var(--ok-text); background: var(--ok-bg); border: 1px solid var(--ok-border);
     border-radius: 8px; padding: 8px 10px; margin-top: 10px; line-height: 1.5;
   }
+  /* The weekly training schedule. Seven equal buttons rather than checkboxes so the whole
+     week reads as one control; aria-pressed carries the state that a checkbox would. */
+  .week { display: flex; gap: 6px; margin-top: 8px; }
+  .wday {
+    flex: 1; padding: 10px 0; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--muted); font: inherit; font-size: 13px;
+    font-weight: 600; cursor: pointer;
+  }
+  .wday[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--ink-fill-fg); }
+
   .seg { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
     color: var(--text-faint); margin: 16px 0 2px; }
 

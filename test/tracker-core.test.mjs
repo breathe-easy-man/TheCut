@@ -368,4 +368,43 @@ assert.equal(C.workoutSplit({ ...train(8), ...train(9), ...train(10) }, D(9)), '
 assert.equal(C.workoutSplit({ ...train(20), ...train(21) }, D(12)), 'Biceps & back',
              'later workouts do not count toward an earlier day');
 
+/* ---- the weekly training schedule (Settings) ---- */
+
+/* 2026-09-14 is a Monday, so D(14+n) walks Mon..Sun. */
+const sched = (v) => C.withDefaults({ trainingDays: v });
+
+assert.equal(C.DEFAULTS.trainingDays, '',
+             'no schedule out of the box: every new day still opens as rest, as it always has');
+assert.equal(C.isTrainingDay(S, D(14)), false, 'the empty default trains on no day');
+assert.equal(C.isTrainingDay(sched(''), D(17)), false);
+
+/* getDay() indices: Sun=0 .. Sat=6. Mon/Tue/Thu/Fri = a four-day week. */
+const fourDay = sched('1,2,4,5');
+assert.equal(C.isTrainingDay(fourDay, D(14)), true,  'Monday');
+assert.equal(C.isTrainingDay(fourDay, D(15)), true,  'Tuesday');
+assert.equal(C.isTrainingDay(fourDay, D(16)), false, 'Wednesday is off');
+assert.equal(C.isTrainingDay(fourDay, D(17)), true,  'Thursday');
+assert.equal(C.isTrainingDay(fourDay, D(18)), true,  'Friday');
+assert.equal(C.isTrainingDay(fourDay, D(19)), false, 'Saturday is off');
+assert.equal(C.isTrainingDay(fourDay, D(20)), false, 'Sunday is off');
+
+/* Sunday is 0, which is falsy — the parse must not drop it. */
+assert.equal(C.isTrainingDay(sched('0'), D(20)), true, 'a Sunday-only schedule trains on Sunday');
+assert.equal(C.isTrainingDay(sched('0'), D(14)), false, 'and on nothing else');
+
+/* Substring matching would make '1' hit day 11 and '2' hit 12; there are only seven days,
+   but a sloppy indexOf on the raw string would also let '15' match a schedule of '1,5'. */
+assert.equal(C.isTrainingDay(sched('1,5'), D(15)), false,
+             'a Tuesday is not a training day under a Mon+Fri schedule');
+
+/* Every day selected, and the order it was written in must not matter. */
+assert.equal(C.isTrainingDay(sched('0,1,2,3,4,5,6'), D(16)), true, 'a seven-day schedule');
+assert.equal(C.isTrainingDay(sched('5,1'), D(14)), true, 'unsorted input still matches Monday');
+
+/* Junk in storage falls back to resting rather than throwing or training every day. */
+assert.equal(C.isTrainingDay(sched(null), D(14)), false, 'null');
+assert.equal(C.isTrainingDay(sched('   '), D(14)), false, 'whitespace');
+assert.equal(C.isTrainingDay(sched('9'), D(14)), false, 'an index no weekday can produce');
+assert.equal(C.isTrainingDay(sched('1,2'), ''), false, 'no date at all');
+
 console.log('redesign core: all assertions passed');

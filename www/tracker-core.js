@@ -22,6 +22,7 @@
     stepBaseline:        2500,
     calPer1000Steps:     45,
     autoSteps:           false,   /* off until asked for: turning it on is what prompts for the permission */
+    trainingDays:        '',      /* weekly schedule; empty = the pre-schedule behaviour, every day rest */
     apiKey:              ''
   };
 
@@ -448,10 +449,29 @@
     return MUSCLE_GROUPS[n % MUSCLE_GROUPS.length];
   }
 
+  /* Which weekdays are training days, as Date#getDay indices: "1,2,4,5" is Mon/Tue/Thu/Fri.
+     A string rather than an array because withDefaults() copies by reference, and one shared
+     mutable default array would be edited in place by every caller that touched it. Empty is
+     the default and means no schedule at all — exactly the behaviour the app had before this
+     setting existed, so nobody's history changes shape by upgrading.
+     The caller decides WHICH days this may stamp; see defaultDay() in app.js, which applies it
+     to today and later only. Retro-stamping a past day would invent a workout that never
+     happened, moving both its calorie target and the muscle rotation. */
+  function isTrainingDay(settings, dateStr) {
+    var raw = String((settings || {}).trainingDays || '').replace(/\s/g, '');
+    if (!raw || !dateStr) return false;
+    var p = String(dateStr).split('-');
+    var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    if (isNaN(d.getTime())) return false;
+    /* Split, never indexOf on the raw string: "15" would otherwise match a schedule of "1,5". */
+    return raw.split(',').indexOf(String(d.getDay())) !== -1;
+  }
+
   root.TrackerCore = {
     DEFAULTS: DEFAULTS,
     MUSCLE_GROUPS: MUSCLE_GROUPS,
     workoutSplit: workoutSplit,
+    isTrainingDay: isTrainingDay,
     KCAL_PER_KG_FAT: KCAL_PER_KG_FAT,
     num: num,
     withDefaults: withDefaults,

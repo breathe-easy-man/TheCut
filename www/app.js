@@ -74,11 +74,16 @@
   var currentTab = 'day';
   var flash = '';
 
-  function defaultDay() {
-    return { dayType: 'rest', meals: [], steps: '', weight: '', done: false };
+  /* The weekly schedule stamps TODAY AND LATER only. getDay() materialises a day merely by
+     being read, so browsing back through the strip would otherwise invent workouts that never
+     happened — moving both those days' calorie targets and the muscle rotation that counts
+     them. A stamped day is still only a starting position: tapping the Workout tile wins. */
+  function defaultDay(date) {
+    var scheduled = date >= todayStr() && C.isTrainingDay(settings, date);
+    return { dayType: scheduled ? 'training' : 'rest', meals: [], steps: '', weight: '', done: false };
   }
   function getDay(date) {
-    if (!cache[date]) cache[date] = defaultDay();
+    if (!cache[date]) cache[date] = defaultDay(date);
     if (typeof cache[date].done === 'undefined') cache[date].done = false;
     return cache[date];
   }
@@ -651,6 +656,18 @@
     document.getElementById('setCalPer1000').value      = settings.calPer1000Steps;
     document.getElementById('setApiKey').value          = settings.apiKey;
 
+    var picked = String(settings.trainingDays || '').replace(/\s/g, '').split(',');
+    var wdays = document.querySelectorAll('#weekDays .wday'), wi, on = 0;
+    for (wi = 0; wi < wdays.length; wi++) {
+      var isOn = picked.indexOf(wdays[wi].getAttribute('data-day')) !== -1;
+      wdays[wi].setAttribute('aria-pressed', isOn ? 'true' : 'false');
+      if (isOn) on++;
+    }
+    document.getElementById('weekHint').textContent = on
+      ? 'Trains ' + on + ' day' + (on === 1 ? '' : 's') + ' a week. New days open already marked, '
+        + 'and tapping the Workout tile still overrides any one of them.'
+      : 'No schedule. Every new day opens as a rest day until you tap the Workout tile.';
+
     document.getElementById('setAutoSteps').checked = !!settings.autoSteps;
     var ah = document.getElementById('autoStepsHint');
     if (!settings.autoSteps) {
@@ -750,6 +767,30 @@
   });
   document.getElementById('goalInput').addEventListener('change', function(e) {
     settings.goalKg = Number(e.target.value) || 3; save(); render();
+  });
+
+  /* Seven buttons collapse into one settings value, which the delegated data-set handler
+     below cannot express, so the week owns its click. Rebuilt from the DOM rather than
+     patched in place: the buttons are the source of truth and the string just follows. */
+  document.getElementById('weekDays').addEventListener('click', function(e) {
+    var btn = e.target.closest('.wday');
+    if (!btn) return;
+    btn.setAttribute('aria-pressed', btn.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    var out = [], all = document.querySelectorAll('#weekDays .wday'), i;
+    for (i = 0; i < all.length; i++) {
+      if (all[i].getAttribute('aria-pressed') === 'true') out.push(all[i].getAttribute('data-day'));
+    }
+    settings.trainingDays = out.join(',');
+    /* Today is already in the cache by the time anyone opens Settings, so it would keep the
+       type it was created with and setting a schedule would appear to do nothing at all.
+       Re-stamp it while it is still untouched; the moment it has meals, steps or a weight on
+       it the user owns that day and the schedule stops having an opinion. */
+    var t = todayStr();
+    if (cache[t] && !cache[t].done && isEmptyDay(cache[t])) {
+      cache[t].dayType = C.isTrainingDay(settings, t) ? 'training' : 'rest';
+    }
+    save();
+    render();
   });
 
   /* One handler for the whole settings page; every field carries its own settings key. */
