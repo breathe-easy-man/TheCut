@@ -566,7 +566,10 @@
     if (picker.showPicker) picker.showPicker(); else picker.click();
   });
   document.getElementById('mealsDatePicker').addEventListener('change', function(e) {
-    if (e.target.value) { currentDate = e.target.value; editing = -1; render(); }
+    if (e.target.value) {
+      if (e.target.value !== currentDate) pushView();
+      currentDate = e.target.value; editing = -1; render();
+    }
   });
 
   function renderProgress() {
@@ -588,7 +591,7 @@
 
     var pendingCount = all.length - n;
     document.getElementById('pendingNote').textContent = pendingCount
-      ? (pendingCount + ' logged day' + (pendingCount > 1 ? 's are' : ' is') + ' not marked finished and stays out of these numbers.')
+      ? (pendingCount + ' logged day' + (pendingCount > 1 ? 's are still in progress and stay' : ' is still in progress and stays') + ' out of these numbers.')
       : '';
 
     var kgLost = totalDeficit / C.KCAL_PER_KG_FAT;
@@ -599,7 +602,7 @@
 
     var avgDef = n ? (totalDeficit / n) : 0;
     var etaEl = document.getElementById('goalEta');
-    if (n < 3) etaEl.textContent = 'Mark a few finished days for a meaningful projection.';
+    if (n < 3) etaEl.textContent = 'A few finished days are needed for a meaningful projection.';
     else if (avgDef <= 0) etaEl.textContent = 'At or above maintenance on average, so no fat loss projected.';
     else {
       var rem = goal - kgLost;
@@ -784,19 +787,52 @@
     render();
   }
 
+  /* ---- Android back unwinds the view, never the data ----
+     The stack holds only where you were looking — the tab and the selected day. Nothing in here
+     touches `cache` or `settings`, so a back press can never undo a logged meal, a typed step
+     count or a saved weight. The two transient overlays (the sheet and the inline edit card) are
+     not stacked: they are closed first, in place, exactly as their own Cancel / X buttons do.
+     Pushes live in the gesture handlers rather than inside selectTab(), so the initial render and
+     a back press itself — both of which call selectTab() directly — add no history. */
+  var viewStack = [];
+  function pushView() {
+    viewStack.push({ tab: currentTab, date: currentDate });
+    if (viewStack.length > 30) viewStack.shift();   /* ponytail: a cap, not a leak */
+  }
+  function goBack() {
+    if (!document.getElementById('sheetHost').hidden) { closeSheet(); return true; }
+    if (editing !== -1) { editing = -1; render(); return true; }   /* same as the card's Cancel */
+    if (viewStack.length) {
+      var v = viewStack.pop();
+      currentDate = v.date;
+      selectTab(v.tab);   /* renders */
+      return true;
+    }
+    return false;
+  }
+  if (plugin('App')) {
+    plugin('App').addListener('backButton', function() {
+      if (!goBack()) plugin('App').exitApp();
+    });
+  }
+
   document.querySelector('.nav').addEventListener('click', function(e) {
     var btn = e.target.closest('[data-tab]');
-    if (btn) selectTab(btn.getAttribute('data-tab'));
+    if (!btn) return;
+    if (btn.getAttribute('data-tab') !== currentTab) pushView();
+    selectTab(btn.getAttribute('data-tab'));
   });
 
   document.getElementById('dayStrip').addEventListener('click', function(e) {
     var b = e.target.closest('[data-date]');
     if (!b) return;
+    if (b.getAttribute('data-date') !== currentDate) pushView();
     currentDate = b.getAttribute('data-date');
     render();
   });
 
   document.getElementById('todayBtn').addEventListener('click', function() {
+    if (currentDate !== todayStr()) pushView();
     currentDate = todayStr();
     render();
   });

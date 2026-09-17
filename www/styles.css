@@ -248,6 +248,7 @@
     display: flex; justify-content: space-between; align-items: center; gap: 8px;
     padding: 14px 16px; background: var(--surface);
     touch-action: pan-y; user-select: none; transition: transform .15s ease;
+    position: relative;   /* paints above .meal-row-panel, which is absolute and would otherwise show through */
   }
   .meal-row.dragging { transition: none; }
   .meal-row.revealed { transform: translateX(-80px); }
