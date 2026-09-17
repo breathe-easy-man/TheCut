@@ -865,7 +865,10 @@
     var sheetId = head.getAttribute('data-sheet');
     if (sheetId) { openSheet(sheetId); return; }
     var body = head.parentElement.querySelector('.srow-body');
-    if (body) body.hidden = !body.hidden;
+    if (body) {
+      body.hidden = !body.hidden;
+      head.setAttribute('aria-expanded', String(!body.hidden));
+    }
   });
 
   /* One sheet, used twice (§11). */
@@ -1004,8 +1007,14 @@
     area.style.display = 'block';
     area.value = exportable();
     area.select();
-    try { document.execCommand('copy'); hint.textContent = 'Copied. Paste it somewhere safe. Your API key is not included.'; }
-    catch (e) { hint.textContent = 'Select the text above and copy it manually.'; }
+    try {
+      document.execCommand('copy');
+      hint.textContent = 'Copied. Paste it somewhere safe. Your API key is not included.';
+      hint.classList.add('status-strip');
+    } catch (e) {
+      hint.textContent = 'Select the text above and copy it manually.';
+      hint.classList.remove('status-strip');
+    }
   });
 
   document.getElementById('importBtn').addEventListener('click', function() {
@@ -1014,6 +1023,7 @@
     if (area.style.display !== 'block' || !area.value.trim()) {
       area.style.display = 'block'; area.value = '';
       hint.textContent = 'Paste your backup above, then press Restore data again.';
+      hint.classList.remove('status-strip');
       area.focus(); return;
     }
     try {
@@ -1026,8 +1036,12 @@
       backfillDoneFlags();
       area.style.display = 'none'; area.value = '';
       hint.textContent = 'Data restored.';
+      hint.classList.add('status-strip');
       save(); render();
-    } catch (e) { hint.textContent = 'Could not read that. Paste the whole backup text.'; }
+    } catch (e) {
+      hint.textContent = 'Could not read that. Paste the whole backup text.';
+      hint.classList.remove('status-strip');
+    }
   });
 
   document.getElementById('resetBtn').addEventListener('click', function() {

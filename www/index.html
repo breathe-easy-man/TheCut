@@ -156,7 +156,7 @@
       </div>
 
       <div class="srow" data-row="maintenance">
-        <button type="button" class="srow-head">
+        <button type="button" class="srow-head" aria-expanded="false">
           <span class="srow-name">Maintenance</span>
           <span class="srow-val" id="sumMaintenance"></span>
         </button>
@@ -208,7 +208,7 @@
       </div>
 
       <div class="srow" data-row="steps">
-        <button type="button" class="srow-head">
+        <button type="button" class="srow-head" aria-expanded="false">
           <span class="srow-name">Step adjustment</span>
           <span class="srow-val" id="sumSteps"></span>
         </button>
@@ -233,7 +233,7 @@
       </div>
 
       <div class="srow" data-row="goal">
-        <button type="button" class="srow-head">
+        <button type="button" class="srow-head" aria-expanded="false">
           <span class="srow-name">Fat loss goal</span>
           <span class="srow-val" id="sumGoal"></span>
         </button>
@@ -247,7 +247,7 @@
       </div>
 
       <div class="srow" data-row="apikey">
-        <button type="button" class="srow-head">
+        <button type="button" class="srow-head" aria-expanded="false">
           <span class="srow-name">Photo estimates</span>
           <span class="srow-val" id="sumApiKey"></span>
         </button>
@@ -263,7 +263,7 @@
       </div>
 
       <div class="srow" data-row="week">
-        <button type="button" class="srow-head">
+        <button type="button" class="srow-head" aria-expanded="false">
           <span class="srow-name">Training schedule</span>
           <span class="srow-val" id="sumWeek"></span>
         </button>
@@ -282,13 +282,13 @@
       </div>
 
       <div class="srow" data-row="backup">
-        <button type="button" class="srow-head" data-sheet="sheetBackup">
+        <button type="button" class="srow-head" data-sheet="sheetBackup" aria-expanded="false">
           <span class="srow-name">Backup &amp; restore</span>
           <span class="srow-val">&rsaquo;</span>
         </button>
       </div>
       <div class="srow" data-row="moveday">
-        <button type="button" class="srow-head" data-sheet="sheetMove">
+        <button type="button" class="srow-head" data-sheet="sheetMove" aria-expanded="false">
           <span class="srow-name">Move a day</span>
           <span class="srow-val">&rsaquo;</span>
         </button>
@@ -304,7 +304,7 @@
       <div class="sheet-grab"></div>
       <div class="sheet-head"><h2 id="sheetTitle"></h2><button class="sheet-x" id="sheetClose" aria-label="Close">&times;</button></div>
       <div class="sheet-body" id="sheetBackup" hidden>
-        <div class="hint status-strip" id="ioHint">Useful before clearing browser data or moving to another device.</div>
+        <div class="hint" id="ioHint">Useful before clearing browser data or moving to another device.</div>
         <div class="io-row">
           <button type="button" id="exportBtn">Copy my data</button>
           <button type="button" id="importBtn">Restore data</button>

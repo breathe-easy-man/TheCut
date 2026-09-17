@@ -310,10 +310,12 @@
   .stat .big { font-size: 18px; font-weight: 700; }
   .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-  /* Neither .warn nor .ok has its own token pair in §4 — .warn reuses the accent tint (the
-     app's only other tinted-attention colour) and .ok borders itself with its own text colour,
-     the same pattern --danger-border uses against --danger-text. */
-  .warn { background: var(--accent-tint); border: 1px solid var(--accent); color: var(--accent-tint-fg); font-size: 12px;
+  /* Neither .warn nor .ok has its own token pair in §4. .warn is the storage-blocked banner —
+     the one message that means the user is about to lose data — so it takes the danger pair
+     (the same "something is wrong" signal "Erase all data" uses), not the brand accent: painting
+     data loss in the FAB/calories/active-nav colour would read as ordinary chrome. .ok borders
+     itself with its own text colour, the same pattern --danger-border uses against --danger-text. */
+  .warn { background: var(--surface-2); border: 1px solid var(--danger-border); color: var(--danger-text); font-size: 12px;
     padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; line-height: 1.4; }
   .ok { background: var(--ok-bg); border: 1px solid var(--ok-text); color: var(--ok-text); font-size: 12px;
     padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; }
