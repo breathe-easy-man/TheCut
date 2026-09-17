@@ -77,9 +77,10 @@
     color: var(--text);
     background: var(--bg);
   }
-  #app { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; }
-  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
-  .sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  /* Bottom padding clears the fixed nav (84px) plus the FAB, per the canvas's own
+     56px/20px/110px content padding for its scroll area. */
+  #app { max-width: 480px; margin: 0 auto; padding: 16px 16px 110px; }
+  .sub { font-size: 11px; color: var(--muted); text-align: center; padding: 8px 0; }
 
   /* Launch screen. Plain markup so it paints before any script runs; removed by JS on tap
      or after a beat. Always dark in both themes — it is a title card, not a surface. */
@@ -94,84 +95,95 @@
   #launch .lquote { font-size: 15px; line-height: 1.55; font-style: italic; color: #e8e8e8; max-width: 330px; }
   #launch .lauthor { font-size: 12px; color: #888; margin-top: 12px; text-transform: uppercase; letter-spacing: 1px; }
 
-  .tabs { display: flex; gap: 8px; margin: 12px 0; }
-  .tabs button {
-    flex: 1; padding: 10px 6px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--surface); font-size: 14px; font-weight: 600; color: var(--text-mid); cursor: pointer;
-  }
-  .tabs button.active { background: var(--ink); color: var(--ink-fg); border-color: var(--ink); }
-
   .page { display: none; }
   .page.active { display: block; }
 
-  .date-row { display: flex; align-items: center; gap: 8px; }
-  .navbtn {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text);
-    padding: 10px 14px; font-size: 15px; font-weight: 600; cursor: pointer;
+  /* ---- bottom nav + FAB (§6) ---- */
+  .nav {
+    position: fixed; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 480px; height: 84px;
+    background: var(--surface); border-top: 1px solid var(--border);
+    display: grid; grid-template-columns: repeat(4, 1fr); padding: 12px 8px 24px; z-index: 4;
   }
-  .navbtn:active { background: var(--surface-3); }
-  #dateInput {
-    flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px;
-    font-size: 14px; text-align: center; background: var(--surface); color: var(--text); font-family: inherit;
+  .nav button {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    border: none; background: none; font-family: inherit; font-size: 11px; font-weight: 500;
+    color: var(--dim); cursor: pointer; padding: 0;
   }
-  .today-btn {
-    width: 100%; padding: 8px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--text-mid); margin-top: 8px;
-  }
-  .daylabel { text-align: center; font-size: 13px; color: var(--text-mid); margin-top: 8px; font-weight: 600; }
+  .nav button.active { color: var(--accent); font-weight: 600; }
+  .nav-ico { width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--border); }
+  .nav button.active .nav-ico { border: none; background: var(--accent); display: flex; align-items: center; justify-content: center; }
 
-  .day-toggle { display: flex; gap: 8px; margin-top: 10px; }
-  .day-toggle button {
-    flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--surface); font-size: 13px; font-weight: 600; color: var(--text-mid); cursor: pointer;
+  .fab {
+    position: fixed; right: 20px; bottom: 96px; z-index: 5;
+    width: 56px; height: 56px; border-radius: 50%; border: none;
+    background: var(--accent); color: var(--ink-fill-fg); font-size: 24px; line-height: 1;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
   }
-  .day-toggle button.active { background: var(--ink); color: var(--ink-fg); border-color: var(--ink); }
 
-  /* Whole row is a label, so tapping anywhere on it flips the checkbox */
-  .done-row {
-    display: flex; align-items: center; gap: 10px; margin-top: 10px;
-    background: var(--surface); border: 1px solid var(--border-soft); border-radius: 10px; padding: 14px;
-    cursor: pointer; user-select: none;
+  /* ---- day strip (§7), replaces Prev / date input / Next ---- */
+  .strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; overflow-x: auto; }
+  .strip-day {
+    display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0;
+    border-radius: 14px; border: none; background: none; font-family: inherit; cursor: pointer;
   }
-  .done-row:active { background: var(--surface-3); }
-  .done-row .txt { flex: 1; font-size: 13px; font-weight: 600; }
-  .switch { position: relative; width: 46px; height: 26px; flex: none; pointer-events: none; }
-  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; }
-  .slider {
-    position: absolute; inset: 0; background: var(--switch-off);
-    border-radius: 26px; transition: .2s;
-  }
-  .slider:before {
-    content: ""; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px;
-    background: #fff; border-radius: 50%; transition: .2s;
-  }
-  .switch input:checked ~ .slider { background: var(--protein); }
-  .switch input:checked ~ .slider:before { transform: translateX(20px); }
+  .sd-label { font-size: 11px; color: var(--muted); font-weight: 500; }
+  .sd-num { font-size: 15px; font-weight: 600; color: var(--text); }
+  .sd-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--border); }
+  .sd-dot.finished { background: var(--ok); }
+  .sd-dot.today { background: var(--accent); }
+  .strip-day.sel { background: var(--ink-fill); }
+  .strip-day.sel .sd-num { color: var(--ink-fill-fg); }
+  .strip-day.sel .sd-label { color: var(--ink-fill-fg); opacity: .7; }
 
-  .card { background: var(--surface); border-radius: 12px; padding: 14px; margin: 14px 0; border: 1px solid var(--border-soft); }
+  .card { background: var(--surface); border-radius: 20px; padding: 20px; margin: 14px 0; border: 1px solid var(--border); }
   .card h3 { font-size: 14px; margin-bottom: 12px; }
 
-  .bar-row { margin-bottom: 12px; }
-  .bar-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
-  .bar-label .name { font-weight: 600; }
-  .bar-label .nums { color: var(--text-mid); }
-  .bar-bg { background: var(--track); border-radius: 6px; height: 8px; overflow: hidden; }
+  /* ---- hero card: calorie/protein figures (§7) ---- */
+  .bar-row { margin-bottom: 16px; }
+  .bar-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 4px; }
+  .bar-label .name { font-weight: 600; color: var(--muted); }
+  .bar-label .nums { color: var(--muted); }   /* still used by Progress's #goalNums */
+  .bar-fig { font-weight: 700; letter-spacing: -.02em; line-height: 1; margin-bottom: 10px; }
+  .bar-fig.cal-fig { font-size: 40px; }
+  .bar-fig.pro-fig { font-size: 24px; }
+  .bar-bg { background: var(--border-faint); border-radius: 6px; overflow: hidden; }
+  .bar-bg.cal-bg { height: 10px; }
+  .bar-bg.pro-bg { height: 6px; }
   .bar-fill { height: 100%; border-radius: 6px; }
-  .bar-fill.cal { background: var(--cal); }
-  .bar-fill.protein { background: var(--protein); }
-  .bar-fill.goal { background: var(--goal); }
+  .bar-fill.cal { background: var(--accent); }
+  .bar-fill.protein { background: var(--ink-fill); }
+  .bar-fill.goal { background: var(--accent); }
   .bar-fill.over { background: var(--over); }
-  .remaining { font-size: 12px; color: var(--text-mid); margin-top: 3px; }
+  .remaining { font-size: 12px; color: var(--muted); }
+
+  /* ---- Workout / Steps / Weight tiles (§7), replace the Training/Rest toggle ---- */
+  .tile-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 4px; }
+  .tile {
+    display: flex; flex-direction: column; align-items: flex-start; text-align: left;
+    border: none; border-radius: 14px; padding: 12px 14px; background: var(--surface-2);
+    font-family: inherit; cursor: pointer;
+  }
+  .tile-lbl { order: -1; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .tile-fig { font-size: 20px; font-weight: 700; margin-top: 4px; color: var(--text); }
+  .tile-sub { font-size: 11px; font-weight: 600; margin-top: 2px; color: var(--muted); }
+  .tile.active { background: var(--accent); }
+  .tile.active .tile-lbl, .tile.active .tile-sub { color: var(--ink-fill-fg); opacity: .85; }
+  .tile.active .tile-fig { color: var(--ink-fill-fg); }
+
+  /* ---- meals preview header (§7) ---- */
+  .section-row { display: flex; justify-content: space-between; align-items: center; margin: 4px 0; }
+  .section-title { font-size: 15px; font-weight: 700; }
+  .see-all { background: none; border: none; padding: 0; font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; }
 
   .steps-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
-  .steps-row label { font-size: 13px; color: var(--text-mid); flex: 1; }
+  .steps-row label { font-size: 13px; color: var(--muted); flex: 1; }
   .steps-row input[type=number], .steps-row input[type=text], .steps-row input[type=password] {
     width: 110px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;
     font-size: 13px; font-family: inherit; background: var(--surface); color: var(--text);
   }
   .steps-row input[readonly] { background: var(--surface-3); color: var(--text-muted); }
   .steps-row input.wide { width: 100%; }
-  .hint { font-size: 11px; color: var(--text-dim); margin-top: 6px; line-height: 1.4; }
+  .hint { font-size: 11px; color: var(--dim); margin-top: 6px; line-height: 1.4; }
   .derived {
     font-size: 12px; color: var(--ok-text); background: var(--ok-bg); border: 1px solid var(--ok-border);
     border-radius: 8px; padding: 8px 10px; margin-top: 10px; line-height: 1.5;

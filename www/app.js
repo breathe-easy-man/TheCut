@@ -227,26 +227,26 @@
     else box.innerHTML = '';
   }
 
+  function renderDayStrip() {
+    var el = document.getElementById('dayStrip');
+    var items = C.dayStrip(cache, currentDate, todayStr()), html = '', i;
+    for (i = 0; i < items.length; i++) {
+      var it = items[i];
+      html += '<button type="button" class="strip-day' + (it.date === currentDate ? ' sel' : '') + '" data-date="' + it.date + '">'
+            +   '<span class="sd-label">' + it.label + '</span>'
+            +   '<span class="sd-num">' + it.dayNum + '</span>'
+            +   '<span class="sd-dot ' + it.status + '"></span>'
+            + '</button>';
+    }
+    el.innerHTML = html;
+  }
+
   function renderDay() {
     var day = getDay(currentDate);
     var t = totals(day);
     var target = targetFor(day);
 
-    document.getElementById('dateInput').value = currentDate;
-    var label = parseDate(currentDate).toLocaleDateString('en-GB',
-      { weekday: 'long', day: 'numeric', month: 'long' });
-    document.getElementById('dayLabel').textContent =
-      label + (currentDate === todayStr() ? ' (today)' : '');
-
-    var toggles = document.querySelectorAll('[data-day]');
-    for (var i = 0; i < toggles.length; i++) {
-      toggles[i].className = (toggles[i].getAttribute('data-day') === day.dayType) ? 'active' : '';
-    }
-
-    document.getElementById('doneToggle').checked = !!day.done;
-    document.getElementById('doneHint').textContent = day.done
-      ? 'Counted in your progress averages.'
-      : 'Not counted yet. Switch this on once you have logged everything for the day.';
+    renderDayStrip();
 
     document.getElementById('calNums').textContent = t.cal + ' / ' + target.cal;
     var calBar = document.getElementById('calBar');
@@ -263,10 +263,27 @@
     document.getElementById('proRemaining').textContent =
       proLeft > 0 ? (proLeft + 'g protein left') : 'protein target hit';
 
+    if (day.dayType === 'training') {
+      document.getElementById('workoutTile').className = 'tile active';
+      document.getElementById('workoutMark').textContent = '✓';
+      document.getElementById('workoutSub').textContent = 'Done';
+    } else {
+      document.getElementById('workoutTile').className = 'tile';
+      document.getElementById('workoutMark').textContent = '—';
+      document.getElementById('workoutSub').textContent = 'Tap if done';
+    }
+
     document.getElementById('stepsInput').value = day.steps || '';
     document.getElementById('weightInput').value = day.weight || '';
 
     var bonus = stepBonus(day);
+    document.getElementById('stepsFig').textContent = day.steps || '0';
+    document.getElementById('stepsBonus').textContent =
+      (bonus > 0 ? '+' + bonus : bonus) + ' cal to target';
+
+    document.getElementById('weightFig').textContent = day.weight ? (day.weight + ' kg') : '—';
+    document.getElementById('weightSub').textContent = day.weight ? 'Logged' : 'Tap to log';
+
     var baseline = C.num(settings.stepBaseline, 2500);
     var per = C.num(settings.calPer1000Steps, 45);
     var hint = document.getElementById('stepHint');
@@ -293,12 +310,13 @@
     }
 
     var list = document.getElementById('mealList');
-    if (day.meals.length === 0) {
+    var recent = day.meals.slice(-3);
+    if (recent.length === 0) {
       list.innerHTML = '<div class="empty">No meals logged yet</div>';
     } else {
       var html = '';
-      for (var j = 0; j < day.meals.length; j++) {
-        var m = day.meals[j];
+      for (var j = 0; j < recent.length; j++) {
+        var m = recent[j];
         var safe = String(m.name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         html += '<div class="meal-item"><div class="info">' +
                 '<div class="mname">' + safe + '</div>' +
@@ -308,6 +326,9 @@
       list.innerHTML = html;
     }
   }
+
+  /* Task 4's page — an empty shell for now so selectTab('meals') never throws. */
+  function renderMeals() {}
 
   function renderProgress() {
     var counted = countedDates();
@@ -436,6 +457,7 @@
   function render() {
     renderWarn();
     if (currentTab === 'day') renderDay();
+    else if (currentTab === 'meals') renderMeals();
     else if (currentTab === 'progress') renderProgress();
     else renderSettings();
   }
@@ -445,59 +467,47 @@
     setTimeout(function() { flash = ''; renderWarn(); }, 3000);
   }
 
-  function shift(days) {
-    var d = parseDate(currentDate);
-    d.setDate(d.getDate() + days);
-    currentDate = ymd(d);
-    render();
-  }
-
   function selectTab(name) {
     currentTab = name;
     var tabBtns = document.querySelectorAll('[data-tab]');
     for (var i = 0; i < tabBtns.length; i++) {
       tabBtns[i].className = (tabBtns[i].getAttribute('data-tab') === name) ? 'active' : '';
     }
-    ['day', 'progress', 'settings'].forEach(function(t) {
+    ['day', 'meals', 'progress', 'settings'].forEach(function(t) {
       document.getElementById('page-' + t).className = 'page' + (name === t ? ' active' : '');
     });
     render();
   }
 
-  document.querySelector('.tabs').addEventListener('click', function(e) {
+  document.querySelector('.nav').addEventListener('click', function(e) {
     var btn = e.target.closest('[data-tab]');
     if (btn) selectTab(btn.getAttribute('data-tab'));
   });
 
-  document.getElementById('prevDay').addEventListener('click', function() { shift(-1); });
-  document.getElementById('nextDay').addEventListener('click', function() { shift(1); });
-  document.getElementById('todayBtn').addEventListener('click', function() { currentDate = todayStr(); render(); });
-  document.getElementById('dateInput').addEventListener('change', function(e) {
-    if (e.target.value) { currentDate = e.target.value; render(); }
+  document.getElementById('dayStrip').addEventListener('click', function(e) {
+    var b = e.target.closest('[data-date]');
+    if (!b) return;
+    currentDate = b.getAttribute('data-date');
+    render();
   });
 
-  document.querySelector('.day-toggle').addEventListener('click', function(e) {
-    var btn = e.target.closest('[data-day]');
-    if (!btn) return;
-    getDay(currentDate).dayType = btn.getAttribute('data-day');
-    save(); render();
-  });
-
-  /* Marking a day finished freezes the maintenance and protein figures it is scored against.
-     Unmarking releases it again. */
-  document.getElementById('doneToggle').addEventListener('change', function(e) {
+  document.getElementById('workoutTile').addEventListener('click', function() {
     var day = getDay(currentDate);
-    day.done = e.target.checked;
-    if (day.done) {
-      var snap = C.snapshotFor(settings, latestWeight());
-      day.maintenance = snap.maintenance;
-      day.proteinTarget = snap.proteinTarget;
-    } else {
-      delete day.maintenance;
-      delete day.proteinTarget;
-    }
+    day.dayType = (day.dayType === 'training') ? 'rest' : 'training';
     save(); render();
   });
+
+  document.getElementById('stepsTile').addEventListener('click', function() {
+    var el = document.getElementById('stepsRevealRow');
+    el.hidden = !el.hidden;
+  });
+  document.getElementById('weightTile').addEventListener('click', function() {
+    var el = document.getElementById('weightRevealRow');
+    el.hidden = !el.hidden;
+  });
+
+  document.getElementById('seeAllBtn').addEventListener('click', function() { selectTab('meals'); });
+  document.getElementById('fab').addEventListener('click', function() { takePhoto('CAMERA'); });
 
   document.getElementById('mealList').addEventListener('click', function(e) {
     var btn = e.target.closest('[data-remove]');

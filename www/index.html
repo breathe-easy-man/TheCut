@@ -17,62 +17,55 @@
 </div>
 
 <div id="app">
-  <h1>theCut</h1>
-  <div class="sub" id="storageMode"></div>
-
-  <div class="tabs">
-    <button type="button" data-tab="day" class="active">Today</button>
-    <button type="button" data-tab="progress">Progress</button>
-    <button type="button" data-tab="settings">Settings</button>
-  </div>
-
-  <div id="warnBox"></div>
-
   <div class="page active" id="page-day">
-    <div class="date-row">
-      <button class="navbtn" id="prevDay" type="button">Prev</button>
-      <input type="date" id="dateInput">
-      <button class="navbtn" id="nextDay" type="button">Next</button>
-    </div>
-    <div class="daylabel" id="dayLabel"></div>
-    <button class="today-btn" id="todayBtn" type="button">Jump to today</button>
-
-    <div class="day-toggle">
-      <button type="button" data-day="training">Training day</button>
-      <button type="button" data-day="rest">Rest day</button>
-    </div>
-
-    <label class="done-row" for="doneToggle">
-      <span class="txt">Day finished (count in progress)</span>
-      <span class="switch">
-        <input type="checkbox" id="doneToggle">
-        <span class="slider"></span>
-      </span>
-    </label>
-    <div class="hint" id="doneHint"></div>
+    <div class="strip" id="dayStrip"></div>
 
     <div class="card">
       <div class="bar-row">
-        <div class="bar-label"><span class="name">Calories</span><span class="nums" id="calNums"></span></div>
-        <div class="bar-bg"><div class="bar-fill cal" id="calBar"></div></div>
-        <div class="remaining" id="calRemaining"></div>
+        <div class="bar-label"><span class="name">Calories</span><span class="remaining" id="calRemaining"></span></div>
+        <div class="bar-fig cal-fig" id="calNums"></div>
+        <div class="bar-bg cal-bg"><div class="bar-fill cal" id="calBar"></div></div>
       </div>
       <div class="bar-row">
-        <div class="bar-label"><span class="name">Protein</span><span class="nums" id="proNums"></span></div>
-        <div class="bar-bg"><div class="bar-fill protein" id="proBar"></div></div>
-        <div class="remaining" id="proRemaining"></div>
+        <div class="bar-label"><span class="name">Protein</span><span class="remaining" id="proRemaining"></span></div>
+        <div class="bar-fig pro-fig" id="proNums"></div>
+        <div class="bar-bg pro-bg"><div class="bar-fill protein" id="proBar"></div></div>
       </div>
-      <div class="steps-row">
+
+      <div class="tile-row">
+        <button type="button" class="tile" id="workoutTile">
+          <span class="tile-fig" id="workoutMark">—</span>
+          <span class="tile-lbl">Workout</span>
+          <span class="tile-sub" id="workoutSub">Tap if done</span>
+        </button>
+        <button type="button" class="tile" id="stepsTile">
+          <span class="tile-fig" id="stepsFig">0</span>
+          <span class="tile-lbl">Steps</span>
+          <span class="tile-sub" id="stepsBonus">+0 cal to target</span>
+        </button>
+        <button type="button" class="tile" id="weightTile">
+          <span class="tile-fig" id="weightFig">—</span>
+          <span class="tile-lbl">Weight</span>
+          <span class="tile-sub" id="weightSub">Tap to log</span>
+        </button>
+      </div>
+
+      <div class="steps-row" id="stepsRevealRow" hidden>
         <label for="stepsInput">Steps</label>
         <input type="number" id="stepsInput" placeholder="0" inputmode="numeric">
       </div>
-      <div class="steps-row">
+      <div class="steps-row" id="weightRevealRow" hidden>
         <label for="weightInput">Weight (kg)</label>
         <input type="number" id="weightInput" placeholder="99.7" step="0.1" inputmode="decimal">
       </div>
       <div class="hint" id="stepHint"></div>
     </div>
 
+    <div class="section-row">
+      <span class="section-title">Meals</span>
+      <button type="button" id="seeAllBtn" class="see-all">See all</button>
+    </div>
+    <div id="quickAdds" class="qa-grid"></div>
     <div id="mealList"></div>
 
     <div class="card add-form">
@@ -96,6 +89,8 @@
       <div class="hint" id="moveHint">Moves everything on the day you are viewing to the date you pick.</div>
     </div>
   </div>
+
+  <section class="page" id="page-meals"></section>
 
   <div class="page" id="page-progress">
     <div class="card">
@@ -236,6 +231,17 @@
       <div class="hint">Stored on this device only, and left out of backups. Photos go to Claude for the estimate and are not kept. Roughly $0.006 per photo.</div>
     </div>
   </div>
+
+  <div class="sub" id="storageMode"></div>
+  <div id="warnBox"></div>
+
+  <button id="fab" class="fab" aria-label="Photo estimate">📷</button>
+  <nav class="nav">
+    <button type="button" data-tab="day" class="active"><span class="nav-ico"></span>Today</button>
+    <button type="button" data-tab="meals"><span class="nav-ico"></span>Meals</button>
+    <button type="button" data-tab="progress"><span class="nav-ico"></span>Progress</button>
+    <button type="button" data-tab="settings"><span class="nav-ico"></span>Settings</button>
+  </nav>
 </div>
 
 <script src="capacitor.js"></script>
