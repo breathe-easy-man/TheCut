@@ -330,7 +330,11 @@ assert.equal(C.shouldFinalize(null, D(11), D(12)), false);
 
 /* ---- the rolling workout split (Today's Workout tile) ---- */
 
-const train = (n) => ({ [D(n)]: { dayType: 'training', meals: [] } });
+/* A training day only advances the rotation if something was actually logged on it — see
+   "the something-logged condition" below. train() therefore carries a meal; trainEmpty() is the
+   scheduled-but-never-trained day. */
+const train = (n) => ({ [D(n)]: { dayType: 'training', meals: [{ cal: 600, protein: 45 }] } });
+const trainEmpty = (n) => ({ [D(n)]: { dayType: 'training', meals: [] } });
 const rest = (n) => ({ [D(n)]: { dayType: 'rest', meals: [] } });
 
 assert.deepEqual(C.MUSCLE_GROUPS, ['Biceps & back', 'Delts & chest', 'Legs', 'Core'],
@@ -406,5 +410,28 @@ assert.equal(C.isTrainingDay(sched(null), D(14)), false, 'null');
 assert.equal(C.isTrainingDay(sched('   '), D(14)), false, 'whitespace');
 assert.equal(C.isTrainingDay(sched('9'), D(14)), false, 'an index no weekday can produce');
 assert.equal(C.isTrainingDay(sched('1,2'), ''), false, 'no date at all');
+
+/* ---- the something-logged condition on the rotation ---- */
+
+/* A weekly schedule stamps dayType 'training' on a day the moment it is opened, trained or not.
+   Counting those would advance the rotation on days the user never trained, which is exactly the
+   date-anchored cycle the per-workout design exists to avoid. */
+assert.equal(C.workoutSplit({ ...trainEmpty(8) }, D(12)), 'Biceps & back',
+             'a scheduled training day with nothing logged does not burn a slot');
+assert.equal(C.workoutSplit({ ...train(8), ...trainEmpty(9), ...trainEmpty(10) }, D(12)),
+             'Delts & chest',
+             'two skipped scheduled days hold the rotation where the last real workout left it');
+
+/* Steps or a weight are logging too — a workout is not only a meal. */
+assert.equal(C.workoutSplit({ [D(8)]: { dayType: 'training', meals: [], steps: 9000 } }, D(12)),
+             'Delts & chest', 'steps count as having trained');
+assert.equal(C.workoutSplit({ [D(8)]: { dayType: 'training', meals: [], weight: 99.2 } }, D(12)),
+             'Delts & chest', 'a logged weight counts too');
+assert.equal(C.workoutSplit({ [D(8)]: { dayType: 'training', meals: [], steps: '' , weight: '' } }, D(12)),
+             'Biceps & back', 'empty strings are not entries');
+
+/* A rest day with a full log still must not advance it — the condition is AND, not OR. */
+assert.equal(C.workoutSplit({ [D(8)]: { dayType: 'rest', meals: [{ cal: 600 }] } }, D(12)),
+             'Biceps & back', 'logging on a rest day does not advance the rotation');
 
 console.log('redesign core: all assertions passed');

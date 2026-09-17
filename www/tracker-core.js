@@ -434,17 +434,32 @@
      workout — roughly 1.75 sessions a week, which beats training a group once a week. */
   var MUSCLE_GROUPS = ['Biceps & back', 'Delts & chest', 'Legs', 'Core'];
 
+  /* Did anything actually happen on this day? Mirrors isEmptyDay() in app.js, which cannot be
+     imported here — this file stays dependency-free and DOM-free. */
+  function logged(day) {
+    return !!(day && ((day.meals && day.meals.length) || day.steps || day.weight));
+  }
+
   /* Which group a given day belongs to. The rotation advances per WORKOUT, not per calendar day:
      a day off does not burn a slot, so missing Wednesday postpones legs rather than skipping them.
+
+     A day counts only if it is marked training AND something was logged on it. Without that
+     second condition a weekly schedule would defeat the first: defaultDay() stamps 'training' on
+     a scheduled day the moment it is opened, so a week of scheduled days the user never trained
+     would advance the rotation four slots and degrade it into exactly the date-anchored cycle
+     this design exists to avoid. The cost is that a real workout you logged nothing at all on
+     does not count either — chosen deliberately over the alternative.
+
      Derived from history rather than stored on the day — unlike maintenance/proteinTarget, a label
      feeds no arithmetic, so recomputing it cannot corrupt a past day's deficit, and keeping it out
      of the day object leaves the backup blob byte-compatible with the original tracker.
      Counts strictly earlier training days, so marking today done never renames today's tile. */
   function workoutSplit(days, date) {
-    var dates = Object.keys(days || {}).sort(), n = 0, i;
+    var dates = Object.keys(days || {}).sort(), n = 0, i, day;
     for (i = 0; i < dates.length; i++) {
       if (dates[i] >= date) break;
-      if (days[dates[i]].dayType === 'training') n++;
+      day = days[dates[i]];
+      if (day.dayType === 'training' && logged(day)) n++;
     }
     return MUSCLE_GROUPS[n % MUSCLE_GROUPS.length];
   }
