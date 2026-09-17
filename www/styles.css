@@ -110,8 +110,7 @@
     color: var(--dim); cursor: pointer; padding: 0;
   }
   .nav button.active { color: var(--accent); font-weight: 600; }
-  .nav-ico { width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--border); }
-  .nav button.active .nav-ico { border: none; background: var(--accent); display: flex; align-items: center; justify-content: center; }
+  .nav-ico { font-size: 20px; line-height: 1; }   /* colour comes from the button text colour */
 
   .fab {
     position: fixed; right: 20px; bottom: 96px; z-index: 5;

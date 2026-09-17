@@ -293,6 +293,20 @@ assert.equal(C.weightAsOf(wDays, D(1)), 0, 'nothing logged yet falls through to 
 assert.equal(C.maintenanceCal(S, C.weightAsOf(wDays, D(1))), 2950,
              'and bodyweight() supplies that fallback, as it does for latestWeight()');
 
+/* ---- weight delta (Today's Weight tile) ---- */
+
+assert.equal(C.weightDelta(wDays, D(12)), -0.4,
+             'the previous LOGGED weight, D10, not the calendar day before (D11 has none)');
+assert.equal(C.weightDelta(wDays, D(5)), null, 'the first ever entry has nothing before it');
+assert.equal(C.weightDelta(wDays, D(11)), null, 'this day has no weight of its own to show a delta for');
+assert.equal(C.weightDelta({}, D(12)), null, 'no history at all');
+assert.equal(C.weightDelta({ [D(12)]: { weight: 99 } }, D(12)), null,
+             'exactly one logged weight ever, on the day itself: still nothing to compare to');
+assert.equal(C.weightDelta({ [D(10)]: { weight: 99 }, [D(12)]: { weight: 99 } }, D(12)), 0,
+             'a genuinely unchanged weight is 0, not null and not hidden');
+assert.equal(C.weightDelta({ [D(1)]: { weight: 82 }, [D(12)]: { weight: 80 } }, D(12)), -2,
+             'a loss on a cut reads negative, not inverted, however wide the gap');
+
 /* ---- should finalize ---- */
 
 const withMeal = { meals: [meal('x', 500, 30)] };

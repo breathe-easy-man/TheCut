@@ -282,7 +282,10 @@
       (bonus > 0 ? '+' + bonus : bonus) + ' cal to target';
 
     document.getElementById('weightFig').textContent = day.weight ? (day.weight + ' kg') : '—';
-    document.getElementById('weightSub').textContent = day.weight ? 'Logged' : 'Tap to log';
+    var wDelta = C.weightDelta(cache, currentDate);
+    document.getElementById('weightSub').textContent =
+      (wDelta === null) ? (day.weight ? 'Logged' : 'Tap to log')
+                         : ((wDelta >= 0 ? '+' : '') + wDelta.toFixed(1) + ' vs last log');
 
     var baseline = C.num(settings.stepBaseline, 2500);
     var per = C.num(settings.calPer1000Steps, 45);

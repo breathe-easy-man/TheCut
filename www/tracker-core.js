@@ -395,6 +395,19 @@
     return best;
   }
 
+  /* The change since the most recent EARLIER logged weight — not the calendar day before, the
+     most recent date before this one that actually has a weight, however big the gap. null
+     when this day has no weight of its own, or none was logged before it (the first entry ever,
+     or an empty history) — the Weight tile then shows the figure with no delta line rather than
+     a misleading +0.0 against the settings fallback. A genuine unchanged weight still returns 0,
+     not null. Reuses weightSeries() with no range cutoff and this date as the upper bound, so
+     the last point (if any) is this day and the one before it is the previous log. */
+  function weightDelta(days, date) {
+    var pts = weightSeries(days, null, date).points;
+    if (pts.length < 2 || pts[pts.length - 1].date !== date) return null;
+    return round1(pts[pts.length - 1].kg - pts[pts.length - 2].kg);
+  }
+
   /* A day finishes once it is strictly past and has at least one meal. A day with no meals is
      never finished: scoring it would invent a full day of deficit for a weekend away. */
   function shouldFinalize(day, dateStr, todayStr) {
@@ -429,6 +442,7 @@
     weightSeries: weightSeries,
     dayStrip: dayStrip,
     weightAsOf: weightAsOf,
+    weightDelta: weightDelta,
     shouldFinalize: shouldFinalize
   };
 
