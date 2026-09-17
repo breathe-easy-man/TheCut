@@ -228,7 +228,7 @@
   function renderWarn() {
     var box = document.getElementById('warnBox');
     if (flash) box.innerHTML = '<div class="ok">' + flash + '</div>';
-    else if (!store.ok) box.innerHTML = '<div class="warn">This device is blocking storage, so entries will not survive a restart. Use Copy my data on the Progress tab.</div>';
+    else if (!store.ok) box.innerHTML = '<div class="warn">This device is blocking storage, so entries will not survive a restart. Use Copy my data under Backup &amp; restore in Settings.</div>';
     else box.innerHTML = '';
   }
 
@@ -615,8 +615,6 @@
     document.getElementById('histBody').innerHTML =
       rows || '<div class="empty">No days logged yet</div>';
 
-    document.getElementById('goalInput').value = settings.goalKg;
-
     renderWeightChart();
   }
 
@@ -674,6 +672,26 @@
     var lw = latestWeight();
     var tracking = !!settings.useLatestWeight && lw > 0;
 
+    /* Training day / Rest day are derived displays, not inputs — same maths as the old
+       #derived box, just split so each has its own summary row. */
+    var m = C.maintenanceCal(settings, lw);
+    var rest = m - C.num(settings.restDeficit, 400);
+    var training = rest + C.num(settings.trainingBump, 200);
+    var protein = C.proteinTarget(settings, lw);
+    document.getElementById('sumTraining').textContent = training.toLocaleString('en-US') + ' cal · ' + protein + 'g';
+    document.getElementById('sumRest').textContent = rest.toLocaleString('en-US') + ' cal · ' + protein + 'g';
+    document.getElementById('sumMaintenance').textContent = m.toLocaleString('en-US') + ' cal';
+
+    var stepBase = C.num(settings.stepBaseline, 2500);
+    var stepCal = C.num(settings.calPer1000Steps, 45);
+    document.getElementById('sumSteps').textContent =
+      (stepCal > 0 ? '+' : '') + stepCal + ' cal / 1,000 above ' + stepBase.toLocaleString('en-US');
+
+    document.getElementById('sumGoal').textContent = Number(settings.goalKg || 0).toFixed(1) + ' kg';
+    document.getElementById('goalInput').value = settings.goalKg;
+
+    document.getElementById('sumApiKey').textContent = String(settings.apiKey || '').trim() ? 'Set' : 'Not set';
+
     document.getElementById('setUseLatest').checked = !!settings.useLatestWeight;
     var wEl = document.getElementById('setWeight');
     wEl.value = tracking ? lw : settings.bodyweight;
@@ -704,6 +722,7 @@
       ? 'Trains ' + on + ' day' + (on === 1 ? '' : 's') + ' a week. New days open already marked, '
         + 'and tapping the Workout tile still overrides any one of them.'
       : 'No schedule. Every new day opens as a rest day until you tap the Workout tile.';
+    document.getElementById('sumWeek').textContent = on ? (on + ' day' + (on === 1 ? '' : 's')) : 'No schedule';
 
     document.getElementById('setAutoSteps').checked = !!settings.autoSteps;
     var ah = document.getElementById('autoStepsHint');
@@ -720,13 +739,6 @@
             : 'Sensor reading fine.')
         + ' Anything you type on the Today tab wins for that day.';
     }
-
-    var m = C.maintenanceCal(settings, lw);
-    var rest = m - C.num(settings.restDeficit, 400);
-    document.getElementById('derived').textContent =
-      'Maintenance ' + m + ' cal · rest day ' + rest +
-      ' · training day ' + (rest + C.num(settings.trainingBump, 200)) +
-      ' · protein ' + C.proteinTarget(settings, lw) + 'g';
   }
 
   function render() {
@@ -842,6 +854,30 @@
       renderSettings();
     }
   });
+
+  /* Expanding rows (§10): a row's own .srow-head either reveals its .srow-body (el.hidden,
+     never style.display) or, for Backup & restore / Move a day, opens the shared bottom sheet
+     instead of expanding in place. One delegated handler covers both, same pattern as the
+     data-set change handler above. */
+  document.getElementById('page-settings').addEventListener('click', function(e) {
+    var head = e.target.closest('.srow-head');
+    if (!head) return;
+    var sheetId = head.getAttribute('data-sheet');
+    if (sheetId) { openSheet(sheetId); return; }
+    var body = head.parentElement.querySelector('.srow-body');
+    if (body) body.hidden = !body.hidden;
+  });
+
+  /* One sheet, used twice (§11). */
+  function openSheet(id) {
+    document.getElementById('sheetBackup').hidden = id !== 'sheetBackup';
+    document.getElementById('sheetMove').hidden = id !== 'sheetMove';
+    document.getElementById('sheetTitle').textContent = id === 'sheetBackup' ? 'Backup & restore' : 'Move a day';
+    document.getElementById('sheetHost').hidden = false;
+  }
+  function closeSheet() { document.getElementById('sheetHost').hidden = true; }
+  document.getElementById('sheetBackdrop').addEventListener('click', closeSheet);
+  document.getElementById('sheetClose').addEventListener('click', closeSheet);
 
   document.getElementById('addBtn').addEventListener('click', function() {
     var nameEl = document.getElementById('mealName');
@@ -961,11 +997,8 @@
     flashMsg('Day moved.');
   });
 
-  /* #exportBtn/#importBtn/#importArea/#ioHint/#resetBtn move to the Settings sheet in Task 6
-     (spec §11). Null-guarded rather than deleted, per Ruling 4, so this commit still boots with
-     the markup gone; Task 6 removes the guard when it re-adds the elements. */
-  var exportBtnEl = document.getElementById('exportBtn');
-  if (exportBtnEl) exportBtnEl.addEventListener('click', function() {
+  /* #exportBtn/#importBtn/#importArea/#ioHint/#resetBtn live in the Settings sheet (§11). */
+  document.getElementById('exportBtn').addEventListener('click', function() {
     var area = document.getElementById('importArea');
     var hint = document.getElementById('ioHint');
     area.style.display = 'block';
@@ -975,8 +1008,7 @@
     catch (e) { hint.textContent = 'Select the text above and copy it manually.'; }
   });
 
-  var importBtnEl = document.getElementById('importBtn');
-  if (importBtnEl) importBtnEl.addEventListener('click', function() {
+  document.getElementById('importBtn').addEventListener('click', function() {
     var area = document.getElementById('importArea');
     var hint = document.getElementById('ioHint');
     if (area.style.display !== 'block' || !area.value.trim()) {
@@ -998,8 +1030,7 @@
     } catch (e) { hint.textContent = 'Could not read that. Paste the whole backup text.'; }
   });
 
-  var resetBtnEl = document.getElementById('resetBtn');
-  if (resetBtnEl) resetBtnEl.addEventListener('click', function() {
+  document.getElementById('resetBtn').addEventListener('click', function() {
     if (!window.confirm('Erase all logged days? Your goals and API key are kept. This cannot be undone.')) return;
     cache = {};
     currentDate = todayStr();

@@ -67,15 +67,6 @@
     </div>
     <div id="quickAdds" class="qa-grid"></div>
     <div id="mealList" class="meals-list"></div>
-
-    <div class="card">
-      <h3>Logged on the wrong day?</h3>
-      <div class="move-row">
-        <input type="date" id="moveTarget">
-        <button type="button" id="moveBtn">Move</button>
-      </div>
-      <div class="hint" id="moveHint">Moves everything on the day you are viewing to the date you pick.</div>
-    </div>
   </div>
 
   <section class="page" id="page-meals">
@@ -123,14 +114,6 @@
     </div>
 
     <div class="card">
-      <div class="steps-row">
-        <label for="goalInput">Goal (kg of fat)</label>
-        <input type="number" id="goalInput" step="0.5" inputmode="decimal">
-      </div>
-      <div class="hint">Deficit is measured against maintenance plus the step adjustment, not against the daily target. Only days marked finished count.</div>
-    </div>
-
-    <div class="card">
       <h3>Totals across finished days</h3>
       <div class="stat-grid">
         <div class="stat"><div class="big" id="statDays">0</div><div class="lbl">days counted</div></div>
@@ -159,95 +142,183 @@
 
   <div class="page" id="page-settings">
     <div class="card">
-      <h3>Goals</h3>
-
-      <div class="seg">Bodyweight</div>
-      <label class="done-row" for="setUseLatest" style="margin-top:6px;">
-        <span class="txt">Track my latest logged weight</span>
-        <span class="switch">
-          <input type="checkbox" id="setUseLatest" data-set="useLatestWeight">
-          <span class="slider"></span>
-        </span>
-      </label>
-      <div class="steps-row">
-        <label for="setWeight">Bodyweight (kg)</label>
-        <input type="number" id="setWeight" data-set="bodyweight" step="0.1" inputmode="decimal">
+      <div class="srow" data-row="training">
+        <div class="srow-head srow-static">
+          <span class="srow-name">Training day</span>
+          <span class="srow-val" id="sumTraining"></span>
+        </div>
       </div>
-      <div class="hint" id="weightHint"></div>
-
-      <div class="seg">Maintenance</div>
-      <div class="steps-row">
-        <label for="setMaintPerKg">Calories per kg</label>
-        <input type="number" id="setMaintPerKg" data-set="maintenancePerKg" step="0.01" inputmode="decimal">
-      </div>
-      <div class="steps-row">
-        <label for="setMaintOverride">Or a fixed number</label>
-        <input type="number" id="setMaintOverride" data-set="maintenanceOverride" placeholder="auto" inputmode="numeric">
+      <div class="srow" data-row="rest">
+        <div class="srow-head srow-static">
+          <span class="srow-name">Rest day</span>
+          <span class="srow-val" id="sumRest"></span>
+        </div>
       </div>
 
-      <div class="seg">Protein</div>
-      <div class="steps-row">
-        <label for="setProteinPerKg">Grams per kg</label>
-        <input type="number" id="setProteinPerKg" data-set="proteinPerKg" step="0.01" inputmode="decimal">
-      </div>
-      <div class="steps-row">
-        <label for="setProteinOverride">Or a fixed number</label>
-        <input type="number" id="setProteinOverride" data-set="proteinOverride" placeholder="auto" inputmode="numeric">
+      <div class="srow" data-row="maintenance">
+        <button type="button" class="srow-head">
+          <span class="srow-name">Maintenance</span>
+          <span class="srow-val" id="sumMaintenance"></span>
+        </button>
+        <div class="srow-body" hidden>
+          <div class="seg">Bodyweight</div>
+          <label class="done-row" for="setUseLatest" style="margin-top:6px;">
+            <span class="txt">Track my latest logged weight</span>
+            <span class="switch">
+              <input type="checkbox" id="setUseLatest" data-set="useLatestWeight">
+              <span class="slider"></span>
+            </span>
+          </label>
+          <div class="steps-row">
+            <label for="setWeight">Bodyweight (kg)</label>
+            <input type="number" id="setWeight" data-set="bodyweight" step="0.1" inputmode="decimal">
+          </div>
+          <div class="hint" id="weightHint"></div>
+
+          <div class="seg">Maintenance</div>
+          <div class="steps-row">
+            <label for="setMaintPerKg">Calories per kg</label>
+            <input type="number" id="setMaintPerKg" data-set="maintenancePerKg" step="0.01" inputmode="decimal">
+          </div>
+          <div class="steps-row">
+            <label for="setMaintOverride">Or a fixed number</label>
+            <input type="number" id="setMaintOverride" data-set="maintenanceOverride" placeholder="auto" inputmode="numeric">
+          </div>
+
+          <div class="seg">Protein</div>
+          <div class="steps-row">
+            <label for="setProteinPerKg">Grams per kg</label>
+            <input type="number" id="setProteinPerKg" data-set="proteinPerKg" step="0.01" inputmode="decimal">
+          </div>
+          <div class="steps-row">
+            <label for="setProteinOverride">Or a fixed number</label>
+            <input type="number" id="setProteinOverride" data-set="proteinOverride" placeholder="auto" inputmode="numeric">
+          </div>
+
+          <div class="seg">Daily deficit</div>
+          <div class="steps-row">
+            <label for="setRestDeficit">Rest-day deficit</label>
+            <input type="number" id="setRestDeficit" data-set="restDeficit" inputmode="numeric">
+          </div>
+          <div class="steps-row">
+            <label for="setTrainingBump">Training-day bump</label>
+            <input type="number" id="setTrainingBump" data-set="trainingBump" inputmode="numeric">
+          </div>
+        </div>
       </div>
 
-      <div class="seg">Daily deficit</div>
-      <div class="steps-row">
-        <label for="setRestDeficit">Rest-day deficit</label>
-        <input type="number" id="setRestDeficit" data-set="restDeficit" inputmode="numeric">
-      </div>
-      <div class="steps-row">
-        <label for="setTrainingBump">Training-day bump</label>
-        <input type="number" id="setTrainingBump" data-set="trainingBump" inputmode="numeric">
+      <div class="srow" data-row="steps">
+        <button type="button" class="srow-head">
+          <span class="srow-name">Step adjustment</span>
+          <span class="srow-val" id="sumSteps"></span>
+        </button>
+        <div class="srow-body" hidden>
+          <div class="steps-row">
+            <label for="setStepBaseline">Baseline steps</label>
+            <input type="number" id="setStepBaseline" data-set="stepBaseline" inputmode="numeric">
+          </div>
+          <div class="steps-row">
+            <label for="setCalPer1000">Cal per 1000 steps</label>
+            <input type="number" id="setCalPer1000" data-set="calPer1000Steps" inputmode="numeric">
+          </div>
+          <label class="done-row" for="setAutoSteps" style="margin-top:10px;">
+            <span class="txt">Count steps automatically</span>
+            <span class="switch">
+              <input type="checkbox" id="setAutoSteps" data-set="autoSteps">
+              <span class="slider"></span>
+            </span>
+          </label>
+          <div class="hint" id="autoStepsHint"></div>
+        </div>
       </div>
 
-      <div class="seg">Training schedule</div>
-      <div class="week" id="weekDays">
-        <button type="button" class="wday" data-day="1" aria-pressed="false" aria-label="Monday">M</button>
-        <button type="button" class="wday" data-day="2" aria-pressed="false" aria-label="Tuesday">T</button>
-        <button type="button" class="wday" data-day="3" aria-pressed="false" aria-label="Wednesday">W</button>
-        <button type="button" class="wday" data-day="4" aria-pressed="false" aria-label="Thursday">T</button>
-        <button type="button" class="wday" data-day="5" aria-pressed="false" aria-label="Friday">F</button>
-        <button type="button" class="wday" data-day="6" aria-pressed="false" aria-label="Saturday">S</button>
-        <button type="button" class="wday" data-day="0" aria-pressed="false" aria-label="Sunday">S</button>
+      <div class="srow" data-row="goal">
+        <button type="button" class="srow-head">
+          <span class="srow-name">Fat loss goal</span>
+          <span class="srow-val" id="sumGoal"></span>
+        </button>
+        <div class="srow-body" hidden>
+          <div class="steps-row">
+            <label for="goalInput">Goal (kg of fat)</label>
+            <input type="number" id="goalInput" step="0.5" inputmode="decimal">
+          </div>
+          <div class="hint">Deficit is measured against maintenance plus the step adjustment, not against the daily target. Only days marked finished count.</div>
+        </div>
       </div>
-      <div class="hint" id="weekHint"></div>
 
-      <div class="seg">Steps</div>
-      <div class="steps-row">
-        <label for="setStepBaseline">Baseline steps</label>
-        <input type="number" id="setStepBaseline" data-set="stepBaseline" inputmode="numeric">
+      <div class="srow" data-row="apikey">
+        <button type="button" class="srow-head">
+          <span class="srow-name">Photo estimates</span>
+          <span class="srow-val" id="sumApiKey"></span>
+        </button>
+        <div class="srow-body" hidden>
+          <div class="steps-row">
+            <label for="setApiKey">Anthropic API key</label>
+          </div>
+          <div class="steps-row">
+            <input class="wide" type="password" id="setApiKey" data-set="apiKey" placeholder="sk-ant-..." autocomplete="off">
+          </div>
+          <div class="hint">Stored on this device only, and left out of backups. Photos go to Claude for the estimate and are not kept. Roughly $0.006 per photo.</div>
+        </div>
       </div>
-      <div class="steps-row">
-        <label for="setCalPer1000">Cal per 1000 steps</label>
-        <input type="number" id="setCalPer1000" data-set="calPer1000Steps" inputmode="numeric">
-      </div>
-      <label class="done-row" for="setAutoSteps" style="margin-top:10px;">
-        <span class="txt">Count steps automatically</span>
-        <span class="switch">
-          <input type="checkbox" id="setAutoSteps" data-set="autoSteps">
-          <span class="slider"></span>
-        </span>
-      </label>
-      <div class="hint" id="autoStepsHint"></div>
 
-      <div class="derived" id="derived"></div>
+      <div class="srow" data-row="week">
+        <button type="button" class="srow-head">
+          <span class="srow-name">Training schedule</span>
+          <span class="srow-val" id="sumWeek"></span>
+        </button>
+        <div class="srow-body" hidden>
+          <div class="week" id="weekDays">
+            <button type="button" class="wday" data-day="1" aria-pressed="false" aria-label="Monday">M</button>
+            <button type="button" class="wday" data-day="2" aria-pressed="false" aria-label="Tuesday">T</button>
+            <button type="button" class="wday" data-day="3" aria-pressed="false" aria-label="Wednesday">W</button>
+            <button type="button" class="wday" data-day="4" aria-pressed="false" aria-label="Thursday">T</button>
+            <button type="button" class="wday" data-day="5" aria-pressed="false" aria-label="Friday">F</button>
+            <button type="button" class="wday" data-day="6" aria-pressed="false" aria-label="Saturday">S</button>
+            <button type="button" class="wday" data-day="0" aria-pressed="false" aria-label="Sunday">S</button>
+          </div>
+          <div class="hint" id="weekHint"></div>
+        </div>
+      </div>
+
+      <div class="srow" data-row="backup">
+        <button type="button" class="srow-head" data-sheet="sheetBackup">
+          <span class="srow-name">Backup &amp; restore</span>
+          <span class="srow-val">&rsaquo;</span>
+        </button>
+      </div>
+      <div class="srow" data-row="moveday">
+        <button type="button" class="srow-head" data-sheet="sheetMove">
+          <span class="srow-name">Move a day</span>
+          <span class="srow-val">&rsaquo;</span>
+        </button>
+      </div>
+
       <div class="hint">Days you have already marked finished keep the numbers they were judged against, so changing anything here never rewrites your history.</div>
     </div>
+  </div>
 
-    <div class="card">
-      <h3>Meal photo AI</h3>
-      <div class="steps-row">
-        <label for="setApiKey">Anthropic API key</label>
+  <div class="sheet-host" id="sheetHost" hidden>
+    <div class="sheet-backdrop" id="sheetBackdrop"></div>
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="sheet-grab"></div>
+      <div class="sheet-head"><h2 id="sheetTitle"></h2><button class="sheet-x" id="sheetClose" aria-label="Close">&times;</button></div>
+      <div class="sheet-body" id="sheetBackup" hidden>
+        <div class="hint status-strip" id="ioHint">Useful before clearing browser data or moving to another device.</div>
+        <div class="io-row">
+          <button type="button" id="exportBtn">Copy my data</button>
+          <button type="button" id="importBtn">Restore data</button>
+        </div>
+        <textarea id="importArea" style="display:none;" placeholder="Paste backup text here, then press Restore data again"></textarea>
+        <button type="button" id="resetBtn" class="danger-btn">Erase all logged days</button>
       </div>
-      <div class="steps-row">
-        <input class="wide" type="password" id="setApiKey" data-set="apiKey" placeholder="sk-ant-..." autocomplete="off">
+      <div class="sheet-body" id="sheetMove" hidden>
+        <div class="move-row">
+          <input type="date" id="moveTarget">
+          <button type="button" id="moveBtn">Move</button>
+        </div>
+        <div class="hint" id="moveHint">Moves everything on the day you are viewing to the date you pick.</div>
       </div>
-      <div class="hint">Stored on this device only, and left out of backups. Photos go to Claude for the estimate and are not kept. Roughly $0.006 per photo.</div>
     </div>
   </div>
 

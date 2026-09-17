@@ -199,13 +199,9 @@
     width: 110px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;
     font-size: 13px; font-family: inherit; background: var(--surface); color: var(--text);
   }
-  .steps-row input[readonly] { background: var(--surface-3); color: var(--text-muted); }
+  .steps-row input[readonly] { background: var(--surface-2); color: var(--muted); }
   .steps-row input.wide { width: 100%; }
   .hint { font-size: 11px; color: var(--dim); margin-top: 6px; line-height: 1.4; }
-  .derived {
-    font-size: 12px; color: var(--ok-text); background: var(--ok-bg); border: 1px solid var(--ok-border);
-    border-radius: 8px; padding: 8px 10px; margin-top: 10px; line-height: 1.5;
-  }
   /* A row of equal buttons carrying aria-pressed state, shared by the weekly training schedule
      (.week/.wday, seven day letters) and Progress's weight-range segmented control (.seg-row/
      .seg-btn, three range labels) — same component, different labels. */
@@ -218,7 +214,7 @@
   .wday[aria-pressed="true"], .seg-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--ink-fill-fg); }
 
   .seg { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
-    color: var(--text-faint); margin: 16px 0 2px; }
+    color: var(--dim); margin: 16px 0 2px; }
 
   .empty { text-align: center; color: var(--dim); font-size: 13px; padding: 20px 0; }
   .ai-err { color: var(--danger-text); }
@@ -314,9 +310,12 @@
   .stat .big { font-size: 18px; font-weight: 700; }
   .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-  .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); font-size: 12px;
+  /* Neither .warn nor .ok has its own token pair in §4 — .warn reuses the accent tint (the
+     app's only other tinted-attention colour) and .ok borders itself with its own text colour,
+     the same pattern --danger-border uses against --danger-text. */
+  .warn { background: var(--accent-tint); border: 1px solid var(--accent); color: var(--accent-tint-fg); font-size: 12px;
     padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; line-height: 1.4; }
-  .ok { background: var(--ok-bg); border: 1px solid var(--ok-border); color: var(--ok-text); font-size: 12px;
+  .ok { background: var(--ok-bg); border: 1px solid var(--ok-text); color: var(--ok-text); font-size: 12px;
     padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; }
 
   /* ---- Progress hero (§9) — the one card that is elevated rather than inverted, so a
@@ -359,3 +358,61 @@
     font-size: 13px; font-family: inherit; background: var(--surface); color: var(--text); }
   .move-row button { padding: 9px 12px; border: 1px solid var(--border); background: var(--surface);
     color: var(--text); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  /* ---- Settings (§10) — expanding rows over one card. Training day/Rest day are static
+     (.srow-static, a div not a button — nothing to expand); every other row's .srow-head
+     toggles its sibling .srow-body's `hidden`, or for Backup & restore / Move a day opens the
+     sheet instead (data-sheet on the head, read by the delegated click handler in app.js). ---- */
+  .srow { border-bottom: 1px solid var(--border-faint); }
+  .srow:last-child { border-bottom: none; }
+  .srow-head {
+    width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 14px 0; border: none; background: none; font: inherit; text-align: left; cursor: pointer;
+  }
+  .srow-head.srow-static { cursor: default; }
+  .srow-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .srow-val { font-size: 13px; color: var(--muted); text-align: right; }
+  .srow-body { padding: 0 0 16px; }
+
+  /* ---- toggle switch (Track my latest logged weight / Count steps automatically) ---- */
+  .done-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer; }
+  .done-row .txt { font-size: 13px; color: var(--text); }
+  .switch { position: relative; flex: none; width: 44px; height: 26px; }
+  .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .slider { position: absolute; inset: 0; background: var(--border); border-radius: 999px; transition: background .15s ease; }
+  .slider::before {
+    content: ''; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px;
+    background: var(--surface); border-radius: 50%; transition: transform .15s ease;
+  }
+  .switch input:checked + .slider { background: var(--accent); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+
+  /* ---- bottom sheet (§11) — one component, used by Backup & restore and Move a day ---- */
+  .sheet-host { position: fixed; inset: 0; z-index: 20; }
+  .sheet-backdrop { position: absolute; inset: 0; background: rgba(17,24,39,.45); }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 480px;
+    max-height: 85vh; overflow-y: auto; background: var(--surface); border-radius: 28px 28px 0 0;
+    padding: 10px 20px 28px;
+  }
+  .sheet-grab { width: 36px; height: 4px; margin: 0 auto 14px; border-radius: 2px; background: var(--border); }
+  .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .sheet-head h2 { font-size: 18px; font-weight: 700; }
+  .sheet-x {
+    width: 30px; height: 30px; border-radius: 50%; border: none; background: var(--surface-2);
+    color: var(--text); font-size: 16px; line-height: 1; cursor: pointer;
+  }
+
+  .status-strip { background: var(--ok-bg); color: var(--ok-text); border-radius: 8px; padding: 8px 10px; }
+  .io-row { display: flex; gap: 8px; margin-top: 12px; }
+  .io-row button { flex: 1; padding: 11px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; }
+  #importArea {
+    width: 100%; margin-top: 10px; min-height: 100px; padding: 10px; border: 1px solid var(--border);
+    border-radius: 10px; font-size: 12px; font-family: inherit; background: var(--surface-2); color: var(--text);
+    resize: vertical;
+  }
+  .danger-btn {
+    width: 100%; margin-top: 14px; padding: 11px; border: 1px solid var(--danger-border); border-radius: 10px;
+    background: var(--surface); color: var(--danger-text); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
