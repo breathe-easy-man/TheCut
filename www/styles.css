@@ -71,6 +71,17 @@
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Some element below also carries a class that sets its own `display` (.steps-row, .composer,
+     .fab…). An author rule normally beats the UA stylesheet's plain `[hidden] { display: none }`
+     regardless of which was written first, so without `!important` here the `hidden` attribute
+     would silently stop working the moment a display-setting class is added alongside it. */
+  [hidden] { display: none !important; }
+  /* Keeps an element rendered (so .click()/.showPicker() still work on it) while showing
+     nothing — unlike display:none, which some WebViews will not open a native picker on. */
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
   body {
     font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'tnum';
@@ -97,6 +108,10 @@
 
   .page { display: none; }
   .page.active { display: block; }
+  /* Meals (§8) lays out in one flex column instead of .card-separated blocks, and needs extra
+     clearance at the foot of its scroll area to clear the composer docked above the nav, which
+     none of the other three pages have. */
+  #page-meals.active { display: flex; flex-direction: column; gap: 20px; padding-bottom: 96px; }
 
   /* ---- bottom nav + FAB (§6) ---- */
   .nav {
@@ -119,6 +134,7 @@
     background: var(--accent); color: var(--ink-fill-fg); font-size: 24px; line-height: 1;
     display: flex; align-items: center; justify-content: center; cursor: pointer;
   }
+  .fab:disabled { opacity: .5; cursor: default; }
 
   /* ---- day strip (§7), replaces Prev / date input / Next ---- */
   .strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; overflow-x: auto; }
@@ -193,37 +209,94 @@
   .seg { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
     color: var(--text-faint); margin: 16px 0 2px; }
 
-  .meal-item {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
-  }
-  .meal-item .info { flex: 1; padding-right: 8px; }
-  .meal-item .mname { font-size: 14px; font-weight: 600; }
-  .meal-item .mnums { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .del-btn {
-    background: var(--surface-2); border: 1px solid var(--border); color: var(--dim);
-    font-size: 13px; padding: 6px 10px; border-radius: 6px; cursor: pointer;
-  }
   .empty { text-align: center; color: var(--dim); font-size: 13px; padding: 20px 0; }
+  .ai-err { color: var(--danger-text); }
 
-  .add-form input {
-    width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;
-    font-size: 14px; margin-bottom: 8px; font-family: inherit;
-    background: var(--surface); color: var(--text);
+  /* ---- Meals header (§8) — the app's only arbitrary-date navigation ---- */
+  .mh { display: flex; justify-content: space-between; align-items: flex-end; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+  .screen-title { display: block; margin-top: 4px; font-size: 28px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+  .mh-date { background: none; border: none; padding: 0; font-family: inherit; color: var(--text); text-align: left; cursor: pointer; }
+  .mh-totals { text-align: right; }
+  .mh-total-fig { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+  .mh-total-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .subhead { font-size: 12px; font-weight: 600; letter-spacing: .06em; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+
+  /* ---- quick add (§8) — shared by Today's preview and the Meals screen ---- */
+  .qa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .qa {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 12px 14px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface);
+    font-family: inherit; text-align: left; cursor: pointer;
   }
-  .row2 { display: flex; gap: 8px; }
-  .row2 input { flex: 1; }
-  .add-btn {
-    width: 100%; padding: 12px; background: var(--ink-fill); color: var(--ink-fill-fg); border: none;
-    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  .qa-name { display: block; font-size: 13px; font-weight: 600; color: var(--text); }
+  .qa-nums { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .qa-plus {
+    flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-tint);
+    color: var(--accent-tint-fg); font-weight: 700; font-size: 16px; display: grid; place-items: center;
   }
-  .photo-btn {
-    width: 100%; padding: 12px; background: var(--surface); color: var(--text);
-    border: 1px solid var(--ink-fill);
-    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+
+  /* ---- meal rows — shared by Today's read-only preview and Meals' swipe list ---- */
+  .meals-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  .meals-list > *:not(:last-child) { border-bottom: 1px solid var(--border-faint); }
+  .meal-row {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 14px 16px; background: var(--surface);
+    touch-action: pan-y; user-select: none; transition: transform .15s ease;
   }
-  .photo-btn:disabled { opacity: .5; cursor: default; }
-  .ai-err { color: var(--danger); }
+  .meal-row.dragging { transition: none; }
+  .meal-row.revealed { transform: translateX(-80px); }
+  .meal-info { min-width: 0; }
+  .meal-name { font-size: 14px; font-weight: 600; }
+  .meal-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .meal-nums { flex: none; text-align: right; }
+  .meal-cal { font-size: 14px; font-weight: 600; }
+  .meal-pro { font-size: 12px; color: var(--muted); }
+  .meal-caption { font-size: 12px; color: var(--dim); text-align: center; margin-top: 10px; }
+
+  /* The wrap is what the list's border-bottom divider applies to (§ meals-list rule above) —
+     the row itself must stay divider-free so the line does not slide with the translateX. */
+  .meal-row-wrap { position: relative; overflow: hidden; background: var(--over); }
+  .meal-row-panel { position: absolute; right: 0; top: 0; bottom: 0; width: 80px; display: grid; place-items: center; }
+  .meal-del-btn { width: 100%; height: 100%; border: none; background: none; color: var(--hero-fg); font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  /* ---- inline edit card (§8) ---- */
+  .meal-edit { padding: 14px 16px; background: var(--accent-tint); display: flex; flex-direction: column; gap: 10px; }
+  .meal-edit-head { display: flex; justify-content: space-between; align-items: center; }
+  .meal-edit-tag { font-size: 11px; font-weight: 600; letter-spacing: .06em; color: var(--accent-tint-fg); text-transform: uppercase; }
+  .meal-edit-meta { font-size: 12px; color: var(--muted); }
+  .meal-edit-name, .meal-edit-field {
+    border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+  }
+  .meal-edit-name { width: 100%; padding: 11px 12px; font-size: 14px; font-weight: 600; font-family: inherit; color: var(--text); border-color: var(--accent); outline: none; }
+  .meal-edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .meal-edit-field { display: flex; align-items: center; min-width: 0; padding: 0 12px; }
+  .meal-edit-field input {
+    flex: 1; min-width: 0; width: 0; border: none; padding: 11px 0; font-size: 14px; font-weight: 600;
+    background: transparent; color: var(--text); font-family: inherit; outline: none;
+  }
+  .meal-edit-field span { font-size: 12px; color: var(--muted); }
+  .meal-edit-actions { display: flex; gap: 8px; }
+  .meal-edit-actions button { flex: 1; padding: 11px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .meal-edit-cancel { border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+  .meal-edit-save { border: none; background: var(--ink-fill); color: var(--ink-fill-fg); }
+
+  /* ---- composer (§8) — docked above the nav, Meals only ---- */
+  .composer {
+    position: fixed; left: 0; right: 0; bottom: 84px; margin: 0 auto; max-width: 480px; z-index: 3;
+    background: var(--surface); border-top: 1px solid var(--border); padding: 12px 16px;
+  }
+  .composer-row { display: flex; gap: 8px; align-items: center; }
+  .composer-row input {
+    padding: 13px 14px; border: 1px solid var(--border); border-radius: 14px; font-size: 14px;
+    font-family: inherit; background: var(--surface-2); color: var(--text); outline: none;
+  }
+  .composer-name { flex: 1; min-width: 0; }
+  .composer-num { width: 64px; text-align: center; }
+  .composer-add {
+    flex: none; width: 46px; height: 46px; border-radius: 14px; border: none;
+    background: var(--accent); color: var(--ink-fill-fg); font-size: 22px; cursor: pointer;
+  }
 
   .stat-grid { display: flex; gap: 8px; }
   .stat { flex: 1; background: var(--surface-2); border-radius: 10px; padding: 10px; text-align: center; }

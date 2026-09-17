@@ -265,6 +265,19 @@
     return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
   }
 
+  /* The meal object carries no meal-type field (the shape is a storage contract — see
+     CLAUDE.md), so the Meals row's "Breakfast · 08:10" label is derived entirely from the
+     hour a meal was logged, which the existing `id` (a Date.now() timestamp) already gives us
+     for free. Four buckets, not a clock-precise taxonomy: this only labels a row, it never
+     feeds a calculation. */
+  function mealSlot(hour) {
+    hour = num(hour, 0);
+    if (hour >= 5 && hour < 11) return 'Breakfast';
+    if (hour >= 11 && hour < 15) return 'Lunch';
+    if (hour >= 18 && hour < 22) return 'Dinner';
+    return 'Snack';
+  }
+
   /* The four most-logged meal names over the last 30 days, each carrying its most recent
      figures. Ties break towards the more recent name, which is also what makes the thin-history
      case work: with one log each, "most logged" degrades into "most recent" for free. If the
@@ -439,6 +452,7 @@
     mealRequest: mealRequest,
     parseMealResponse: parseMealResponse,
     quickAdds: quickAdds,
+    mealSlot: mealSlot,
     weightSeries: weightSeries,
     dayStrip: dayStrip,
     weightAsOf: weightAsOf,

@@ -234,6 +234,16 @@ assert.equal(qaFallback[1].name, 'Old soup', 'and an older one fills the gap rat
 /* A future day must never be counted. */
 assert.equal(C.quickAdds({ [D(20)]: { meals: [meal('Tomorrow', 1, 1)] } }, 4, D(12)).length, 0);
 
+/* ---- meal slot (Meals row's "Breakfast · 08:10" label) ---- */
+
+assert.equal(C.mealSlot(8), 'Breakfast');
+assert.equal(C.mealSlot(5), 'Breakfast', 'the boundary hour belongs to the slot starting there');
+assert.equal(C.mealSlot(13), 'Lunch');
+assert.equal(C.mealSlot(16), 'Snack', 'mid-afternoon has no slot of its own');
+assert.equal(C.mealSlot(19), 'Dinner');
+assert.equal(C.mealSlot(2), 'Snack', 'the small hours fall back to snack, not a fifth label');
+assert.equal(C.mealSlot(''), 'Snack', 'a bad hour degrades to snack rather than throwing');
+
 /* ---- weight series ---- */
 
 const wDays = {

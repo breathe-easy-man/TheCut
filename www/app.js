@@ -312,26 +312,243 @@
       }
     }
 
-    var list = document.getElementById('mealList');
+    renderQuickAdds('quickAdds');
+    renderMealPreview();
+  }
+
+  /* ---- meals: shared row rendering (Today's read-only preview and the Meals screen's
+     swipe-to-delete list both build the same row shape) ---- */
+
+  /* The meal object carries no time/category field of its own (that shape is a storage
+     contract — see CLAUDE.md), so the "Breakfast · 08:10" meta line is derived from the one
+     timestamp a meal already has: `id`, which has been Date.now() since the very first
+     #addBtn handler. mealSlot() is the pure, tested half of this; reading the local hour off
+     a Date is glue that belongs here, next to todayStr()/parseDate(). */
+  function mealMeta(m) {
+    var dt = new Date(m.id);
+    var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+    return C.mealSlot(dt.getHours()) + ' · ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+  }
+
+  function mealRowInnerHTML() {
+    return '<div class="meal-info"><div class="meal-name"></div><div class="meal-meta"></div></div>'
+         +   '<div class="meal-nums"><div class="meal-cal"></div><div class="meal-pro"></div></div>';
+  }
+
+  /* Every user-supplied string reaches the DOM through textContent, never string-concatenated
+     into innerHTML — a meal name comes from Claude or from typing and must not be able to
+     inject markup. */
+  function fillMealRow(row, m) {
+    row.querySelector('.meal-name').textContent = m.name;
+    row.querySelector('.meal-meta').textContent = mealMeta(m);
+    row.querySelector('.meal-cal').textContent = Math.round(C.num(m.cal, 0));
+    row.querySelector('.meal-pro').textContent = round1(C.num(m.protein, 0)) + 'g';
+  }
+
+  /* Today's preview: the last three meals, read-only. Spec §7 lists quick-add chips, the last
+     three meals and "See all" for this card — no delete affordance of its own, so there is
+     only one place a meal can be removed from (the Meals screen's swipe list, below). */
+  function renderMealPreview() {
+    var day = getDay(currentDate);
     var recent = day.meals.slice(-3);
-    if (recent.length === 0) {
+    var list = document.getElementById('mealList');
+    if (!recent.length) {
       list.innerHTML = '<div class="empty">No meals logged yet</div>';
-    } else {
-      var html = '';
-      for (var j = 0; j < recent.length; j++) {
-        var m = recent[j];
-        var safe = String(m.name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        html += '<div class="meal-item"><div class="info">' +
-                '<div class="mname">' + safe + '</div>' +
-                '<div class="mnums">' + m.cal + ' cal, ' + round1(Number(m.protein)) + 'g protein</div>' +
-                '</div><button type="button" class="del-btn" data-remove="' + m.id + '">Del</button></div>';
+      return;
+    }
+    var html = '', i;
+    for (i = 0; i < recent.length; i++) html += '<div class="meal-row">' + mealRowInnerHTML() + '</div>';
+    list.innerHTML = html;
+    var rows = list.querySelectorAll('.meal-row');
+    for (i = 0; i < rows.length; i++) fillMealRow(rows[i], recent[i]);
+  }
+
+  /* ---- quick add (§8, also called from renderDay() so the same grid appears on Today) ---- */
+
+  function renderQuickAdds(hostId) {
+    var host = document.getElementById(hostId);
+    var items = C.quickAdds(cache, 4, todayStr()), html = '', i;
+    for (i = 0; i < items.length; i++) {
+      html += '<button type="button" class="qa" data-qa="' + i + '">'
+            +   '<span class="qa-name"></span><span class="qa-nums"></span><span class="qa-plus">+</span>'
+            + '</button>';
+    }
+    host.innerHTML = html;
+    var btns = host.querySelectorAll('.qa');
+    for (i = 0; i < btns.length; i++) {
+      btns[i].querySelector('.qa-name').textContent = items[i].name;
+      btns[i].querySelector('.qa-nums').textContent = items[i].cal + ' cal · ' + items[i].protein + 'g';
+    }
+    host.quickAddItems = items;
+  }
+
+  /* One delegated handler covers both grids (Today's #quickAdds and Meals' #mealsQuickAdds) —
+     the tapped item is looked up on whichever .qa-grid the button lives in. */
+  document.getElementById('app').addEventListener('click', function(e) {
+    var btn = e.target.closest('.qa');
+    if (!btn) return;
+    var host = btn.closest('.qa-grid');
+    var items = host && host.quickAddItems;
+    var item = items && items[Number(btn.getAttribute('data-qa'))];
+    if (!item) return;
+    getDay(currentDate).meals.push({ id: Date.now(), name: item.name, cal: item.cal, protein: item.protein });
+    save(); render();
+  });
+
+  /* ---- Meals screen (§8) ---- */
+
+  var editing = -1;   /* index into the current day's meals under edit here, or -1 */
+
+  function mealsDateLabel(dateStr) {
+    return parseDate(dateStr).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+
+  function editCardHTML() {
+    return '<div class="meal-edit">'
+         +   '<div class="meal-edit-head"><span class="meal-edit-tag">Editing</span><span class="meal-edit-meta"></span></div>'
+         +   '<input type="text" class="meal-edit-name">'
+         +   '<div class="meal-edit-row">'
+         +     '<div class="meal-edit-field"><input type="number" inputmode="decimal" class="meal-edit-cal"><span>cal</span></div>'
+         +     '<div class="meal-edit-field"><input type="number" inputmode="decimal" class="meal-edit-pro"><span>g</span></div>'
+         +   '</div>'
+         +   '<div class="meal-edit-actions"><button type="button" class="meal-edit-cancel">Cancel</button><button type="button" class="meal-edit-save">Save</button></div>'
+         + '</div>';
+  }
+
+  function wireEditCard(card, index) {
+    var m = getDay(currentDate).meals[index];
+    var nameEl = card.querySelector('.meal-edit-name');
+    var calEl = card.querySelector('.meal-edit-cal');
+    var proEl = card.querySelector('.meal-edit-pro');
+    card.querySelector('.meal-edit-meta').textContent = mealMeta(m);
+    nameEl.value = m.name;
+    calEl.value = m.cal;
+    proEl.value = m.protein;
+    card.querySelector('.meal-edit-cancel').addEventListener('click', function() {
+      editing = -1; render();
+    });
+    card.querySelector('.meal-edit-save').addEventListener('click', function() {
+      var name = nameEl.value.trim();
+      var cal = Number(calEl.value);
+      if (!name || !cal) return;
+      m.name = name; m.cal = cal; m.protein = Number(proEl.value) || 0;
+      editing = -1;
+      save(); render();
+    });
+  }
+
+  /* Pointer events on the row, a translateX transform, a ~60px threshold. The gesture must not
+     engage until it is clearly horizontal (an 8px dead zone, then whichever axis moved further
+     wins and locks for the rest of the drag) or it fights the page's own vertical scroll —
+     touch-action: pan-y on the row is the other half of that, letting the browser keep scrolling
+     while this handler claims left/right.
+
+     Deliberately NOT delete-on-swipe: reaching the threshold only adds .revealed, which slides
+     the row to expose the Delete panel underneath. Deleting is a second, explicit tap on that
+     panel's own button. A half-recognised gesture — released early, or cut short by
+     pointercancel (the OS taking the gesture back, or a re-render replacing this row under an
+     active pointer capture) — always resolves through the same end() to either fully closed or
+     revealed-but-not-deleted; there is no path from a swipe alone to a removed meal. */
+  function wireSwipe(row, onTap) {
+    var x0 = 0, y0 = 0, dx = 0, axis = null, id = null, moved = false;
+    row.addEventListener('pointerdown', function(e) {
+      id = e.pointerId; x0 = e.clientX; y0 = e.clientY; dx = 0; axis = null; moved = false;
+      row.classList.add('dragging');
+    });
+    row.addEventListener('pointermove', function(e) {
+      if (e.pointerId !== id) return;
+      var mx = e.clientX - x0, my = e.clientY - y0;
+      if (!axis) {
+        if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+        axis = Math.abs(mx) > Math.abs(my) ? 'x' : 'y';
+        if (axis === 'x') {
+          moved = true;
+          try { row.setPointerCapture(id); } catch (err) {}
+        }
       }
-      list.innerHTML = html;
+      if (axis !== 'x') return;
+      e.preventDefault();
+      dx = Math.min(0, mx);                      /* left only */
+      row.style.transform = 'translateX(' + dx + 'px)';
+    });
+    function end() {
+      row.classList.remove('dragging');
+      if (axis === 'x' && dx < -60) row.classList.add('revealed');
+      else row.classList.remove('revealed');
+      row.style.transform = '';
+      axis = null; id = null;
+    }
+    row.addEventListener('pointerup', end);
+    row.addEventListener('pointercancel', end);
+    row.addEventListener('click', function() {
+      if (moved) { moved = false; return; }             /* swallow the click after a real drag */
+      if (row.classList.contains('revealed')) {          /* tap-anywhere dismisses an open panel */
+        row.classList.remove('revealed');
+        return;
+      }
+      if (onTap) onTap();
+    });
+  }
+
+  function renderMealsList() {
+    var day = getDay(currentDate);
+    var meals = day.meals;
+    var host = document.getElementById('mealsList');
+    var i, html;
+    if (!meals.length) {
+      host.innerHTML = '<div class="empty">No meals logged yet</div>';
+      return;
+    }
+    html = '';
+    for (i = 0; i < meals.length; i++) {
+      html += (i === editing) ? editCardHTML()
+        : '<div class="meal-row-wrap"><div class="meal-row-panel"><button type="button" class="meal-del-btn" data-remove="'
+          + meals[i].id + '">Delete</button></div><div class="meal-row">' + mealRowInnerHTML() + '</div></div>';
+    }
+    host.innerHTML = html;
+    for (i = 0; i < meals.length; i++) {
+      if (i === editing) { wireEditCard(host.children[i], i); continue; }
+      (function(idx, row) {
+        fillMealRow(row, meals[idx]);
+        wireSwipe(row, function() { editing = idx; render(); });
+      })(i, host.children[i].querySelector('.meal-row'));
     }
   }
 
-  /* Task 4's page — an empty shell for now so selectTab('meals') never throws. */
-  function renderMeals() {}
+  /* The panel's Delete button reuses this one route — Today's preview has no delete button of
+     its own (see renderMealPreview()), so this is the only place a meal is ever removed. */
+  document.getElementById('mealsList').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-remove]');
+    if (!btn) return;
+    var id = Number(btn.getAttribute('data-remove'));
+    var day = getDay(currentDate);
+    day.meals = day.meals.filter(function(m) { return m.id !== id; });
+    editing = -1;
+    save(); render();
+  });
+
+  function renderMeals() {
+    var day = getDay(currentDate);
+    var t = totals(day);
+
+    document.getElementById('mealsDate').textContent = mealsDateLabel(currentDate);
+    document.getElementById('mealsTotalFig').textContent = t.cal;
+    document.getElementById('mealsTotalSub').textContent = 'cal · ' + t.protein + 'g protein';
+    document.getElementById('mealsLoggedLabel').textContent =
+      (currentDate === todayStr()) ? 'Logged today' : 'Logged';
+
+    renderQuickAdds('mealsQuickAdds');
+    renderMealsList();
+  }
+
+  document.getElementById('mealsDate').addEventListener('click', function() {
+    var picker = document.getElementById('mealsDatePicker');
+    picker.value = currentDate;
+    if (picker.showPicker) picker.showPicker(); else picker.click();
+  });
+  document.getElementById('mealsDatePicker').addEventListener('change', function(e) {
+    if (e.target.value) { currentDate = e.target.value; editing = -1; render(); }
+  });
 
   function renderProgress() {
     var counted = countedDates();
@@ -479,6 +696,11 @@
     ['day', 'meals', 'progress', 'settings'].forEach(function(t) {
       document.getElementById('page-' + t).className = 'page' + (name === t ? ' active' : '');
     });
+    /* The FAB (camera) only makes sense on Today, matching the canvas — it is drawn on the
+       Today artboard and on none of the other three. The composer is docked on Meals only. */
+    document.getElementById('fab').hidden = (name !== 'day');
+    document.getElementById('mealComposer').hidden = (name !== 'meals');
+    if (name !== 'meals') editing = -1;   /* never leave a stale edit card for the next visit */
     render();
   }
 
@@ -510,15 +732,9 @@
   });
 
   document.getElementById('seeAllBtn').addEventListener('click', function() { selectTab('meals'); });
-  document.getElementById('fab').addEventListener('click', function() { takePhoto('CAMERA'); });
-
-  document.getElementById('mealList').addEventListener('click', function(e) {
-    var btn = e.target.closest('[data-remove]');
-    if (!btn) return;
-    var id = Number(btn.getAttribute('data-remove'));
-    var day = getDay(currentDate);
-    day.meals = day.meals.filter(function(m) { return m.id !== id; });
-    save(); render();
+  document.getElementById('fab').addEventListener('click', function() {
+    selectTab('meals');            /* the composer that takePhoto() fills lives there */
+    takePhoto('CAMERA');
   });
 
   document.getElementById('stepsInput').addEventListener('change', function(e) {
@@ -573,9 +789,7 @@
   var analysing = false;
   function setAnalysing(on) {
     analysing = on;
-    var b = document.getElementById('photoBtn');
-    b.disabled = on;
-    b.textContent = on ? 'Working…' : 'Estimate from a photo';
+    document.getElementById('fab').disabled = on;
   }
 
   function takePhoto(source) {
@@ -627,10 +841,6 @@
     });
   }
 
-  /* In the app the chooser is useful — a meal is often already in the gallery. From the widget
-     the user has explicitly asked to shoot one, so go straight to the camera. */
-  document.getElementById('photoBtn').addEventListener('click', function() { takePhoto('PROMPT'); });
-
   /* The widget's button launches the app with an extra; the bridge hands it over exactly once,
      so a later resume does not re-open the camera. */
   function checkWidgetAction() {
@@ -640,8 +850,7 @@
       if (!r || !r.shoot) return;
       dismissLaunch();
       currentDate = todayStr();           /* the widget always means today */
-      selectTab('day');
-      document.querySelector('.add-form').scrollIntoView({ block: 'center' });
+      selectTab('meals');                 /* the composer that takePhoto() fills lives there */
       takePhoto('CAMERA');
     }).catch(function() {});
   }

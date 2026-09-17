@@ -66,19 +66,7 @@
       <button type="button" id="seeAllBtn" class="see-all">See all</button>
     </div>
     <div id="quickAdds" class="qa-grid"></div>
-    <div id="mealList"></div>
-
-    <div class="card add-form">
-      <h3>Add meal</h3>
-      <button class="photo-btn" id="photoBtn" type="button">Estimate from a photo</button>
-      <div class="hint" id="aiStatus" style="margin-top:0;margin-bottom:10px;"></div>
-      <input type="text" id="mealName" placeholder="e.g. Chicken breast + rice">
-      <div class="row2">
-        <input type="number" id="mealCal" placeholder="Calories" inputmode="numeric">
-        <input type="number" id="mealProtein" placeholder="Protein (g)" inputmode="decimal">
-      </div>
-      <button class="add-btn" id="addBtn" type="button">Add meal</button>
-    </div>
+    <div id="mealList" class="meals-list"></div>
 
     <div class="card">
       <h3>Logged on the wrong day?</h3>
@@ -90,7 +78,40 @@
     </div>
   </div>
 
-  <section class="page" id="page-meals"></section>
+  <section class="page" id="page-meals">
+    <header class="mh">
+      <div>
+        <div class="eyebrow">Meals</div>
+        <button type="button" class="screen-title mh-date" id="mealsDate">Today</button>
+      </div>
+      <div class="mh-totals" id="mealsTotals">
+        <div class="mh-total-fig" id="mealsTotalFig">0</div>
+        <div class="mh-total-sub" id="mealsTotalSub">cal · 0g protein</div>
+      </div>
+    </header>
+    <input type="date" id="mealsDatePicker" class="visually-hidden">
+
+    <div>
+      <div class="subhead">Quick add</div>
+      <div id="mealsQuickAdds" class="qa-grid"></div>
+    </div>
+
+    <div>
+      <div class="subhead" id="mealsLoggedLabel">Logged today</div>
+      <div id="mealsList" class="meals-list"></div>
+      <div class="meal-caption">Swipe left to delete · tap to edit</div>
+    </div>
+  </section>
+
+  <div class="composer" id="mealComposer" hidden>
+    <div class="hint" id="aiStatus"></div>
+    <div class="composer-row">
+      <input type="text" id="mealName" class="composer-name" placeholder="Add a meal…">
+      <input type="number" id="mealCal" class="composer-num" placeholder="cal" inputmode="numeric">
+      <input type="number" id="mealProtein" class="composer-num" placeholder="g" inputmode="decimal">
+      <button type="button" class="composer-add" id="addBtn" aria-label="Add meal">↑</button>
+    </div>
+  </div>
 
   <div class="page" id="page-progress">
     <div class="card">
