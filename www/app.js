@@ -974,7 +974,12 @@
 
   document.addEventListener('visibilitychange', function() {
     if (document.hidden) { stopStepPolling(); return; }
+    /* finalizeDays() can mutate and save, and nothing else in this branch repaints: syncSteps()
+       returns immediately while autoSteps is off, which is the default. Boot renders explicitly
+       for the same reason. Without this, resuming after midnight leaves yesterday on screen
+       still looking unfinished after it has been finished and snapshotted. */
     finalizeDays();
+    render();
     checkWidgetAction();
     syncSteps();
     startStepPolling();
