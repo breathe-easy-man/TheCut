@@ -193,22 +193,21 @@
     } catch (e) {}
   }
 
-  /* Days logged before this feature existed get their flag guessed, and any finished day that
-     has never been snapshotted gets frozen now — the alternative is letting it float forever
-     and re-score itself every time the scale moves. */
-  function backfillDoneFlags() {
-    var t = todayStr(), changed = false, snap = C.snapshotFor(settings, latestWeight());
-    for (var k in cache) {
-      var d = cache[k];
-      if (typeof d.done === 'undefined') {
-        d.done = (k < t) && d.meals && d.meals.length > 0;
-        changed = true;
-      }
-      if (d.done && !d.maintenance) {
-        d.maintenance = snap.maintenance;
-        d.proteinTarget = snap.proteinTarget;
-        changed = true;
-      }
+  /* Every day strictly in the past that holds at least one meal is finished and snapshotted.
+     The snapshot uses the weight logged on or before that day, not today's — four days away
+     would otherwise freeze all four against one morning's weigh-in. That makes automatic
+     finishing strictly more accurate than the toggle it replaces, which snapshotted whenever
+     the user happened to tap it. */
+  function finalizeDays() {
+    var t = todayStr(), dates = Object.keys(cache), changed = false, i;
+    for (i = 0; i < dates.length; i++) {
+      var d = dates[i], day = cache[d];
+      if (!C.shouldFinalize(day, d, t)) continue;
+      var snap = C.snapshotFor(settings, C.weightAsOf(cache, d));
+      day.done = true;
+      day.maintenance = snap.maintenance;
+      day.proteinTarget = snap.proteinTarget;
+      changed = true;
     }
     if (changed) save();
   }
@@ -975,6 +974,7 @@
 
   document.addEventListener('visibilitychange', function() {
     if (document.hidden) { stopStepPolling(); return; }
+    finalizeDays();
     checkWidgetAction();
     syncSteps();
     startStepPolling();
@@ -1033,7 +1033,7 @@
       cache = data.logs;
       settings = C.withDefaults(data.settings);
       settings.apiKey = keptKey;
-      backfillDoneFlags();
+      finalizeDays();
       area.style.display = 'none'; area.value = '';
       hint.textContent = 'Data restored.';
       hint.classList.add('status-strip');
@@ -1052,7 +1052,7 @@
   });
 
   load();
-  backfillDoneFlags();
+  finalizeDays();
   currentDate = todayStr();
   document.getElementById('storageMode').textContent =
     store.ok ? 'Saving automatically to this device' : 'Storage unavailable, use backup';
