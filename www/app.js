@@ -594,22 +594,6 @@
         : 'About ' + Math.ceil((rem * C.KCAL_PER_KG_FAT) / avgDef) + ' more days at ' + Math.round(avgDef) + ' cal/day.';
     }
 
-    var wDates = [];
-    for (var k in cache) { if (cache[k].weight) wDates.push(k); }
-    wDates.sort();
-    if (wDates.length) {
-      var first = Number(getDay(wDates[0]).weight);
-      var last = Number(getDay(wDates[wDates.length - 1]).weight);
-      document.getElementById('statWStart').textContent = first.toFixed(1);
-      document.getElementById('statWNow').textContent = last.toFixed(1);
-      var delta = last - first;
-      document.getElementById('statWDelta').textContent = (delta >= 0 ? '+' : '') + delta.toFixed(1);
-    } else {
-      document.getElementById('statWStart').textContent = '-';
-      document.getElementById('statWNow').textContent = '-';
-      document.getElementById('statWDelta').textContent = '-';
-    }
-
     var rows = '';
     var recent = all.slice(-14).reverse();
     for (var r = 0; r < recent.length; r++) {
@@ -618,20 +602,73 @@
       var diff = tt.cal - tg.cal;
       var lbl = parseDate(recent[r]).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
       if (!dd.done) {
-        rows += '<tr><td>' + lbl + ' <span class="pending">in progress</span></td>' +
-                '<td class="num">' + tt.cal + '</td><td class="num">' + tg.cal +
-                '</td><td class="num pending">-</td><td class="num">' + tt.protein + 'g</td></tr>';
+        rows += '<div class="hist-row"><div class="hist-date">' + lbl + ' <span class="hist-chip">In progress</span></div>' +
+                '<div class="hist-nums"><span class="hist-cal">' + tt.cal + '<span class="hist-target">/' + tg.cal + '</span></span>' +
+                '<span class="hist-delta hd-pending">—</span></div></div>';
       } else {
-        rows += '<tr><td>' + lbl + '</td><td class="num">' + tt.cal + '</td><td class="num">' + tg.cal +
-                '</td><td class="num ' + (diff > 0 ? 'neg' : 'pos') + '">' + (diff > 0 ? '+' : '') + diff +
-                '</td><td class="num">' + tt.protein + 'g</td></tr>';
+        rows += '<div class="hist-row"><div class="hist-date">' + lbl + '</div>' +
+                '<div class="hist-nums"><span class="hist-cal">' + tt.cal + '<span class="hist-target">/' + tg.cal + '</span></span>' +
+                '<span class="hist-delta ' + (diff > 0 ? 'hd-over' : 'hd-ok') + '">' + (diff > 0 ? '+' : '') + diff +
+                '</span></div></div>';
       }
     }
     document.getElementById('histBody').innerHTML =
-      rows || '<tr><td colspan="5" class="empty">No days logged yet</td></tr>';
+      rows || '<div class="empty">No days logged yet</div>';
 
     document.getElementById('goalInput').value = settings.goalKg;
+
+    renderWeightChart();
   }
+
+  /* ---- Weight chart (§9) — 7d/30d/all segmented control over an inline SVG trend line ---- */
+
+  var weightRange = '30d';
+
+  function renderWeightChart() {
+    var s = C.weightSeries(cache, weightRange, todayStr());
+    var box = document.getElementById('weightChart');
+    if (s.points.length < 2) {
+      box.innerHTML = '<div class="empty">Log a weight on two days to see the trend.</div>';
+      return;
+    }
+    var W = 320, H = 120, P = 8;
+    var pad = Math.max(0.4, (s.max - s.min) * 0.15);       /* never a zero-height range */
+    var lo = s.min - pad, hi = s.max + pad;
+    var n = s.points.length;
+    var x = function (i) { return P + (i / (n - 1)) * (W - 2 * P); };
+    var y = function (kg) { return H - P - ((kg - lo) / (hi - lo)) * (H - 2 * P); };
+
+    var d = '', i;
+    for (i = 0; i < n; i++) d += (i ? ' ' : '') + x(i).toFixed(1) + ',' + y(s.points[i].kg).toFixed(1);
+
+    var grid = '';
+    for (i = 0; i < 3; i++) {
+      var gy = (P + (i / 2) * (H - 2 * P)).toFixed(1);
+      grid += '<line x1="' + P + '" y1="' + gy + '" x2="' + (W - P) + '" y2="' + gy + '" class="cg"/>';
+    }
+
+    box.innerHTML =
+      '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" class="wchart">' +
+        grid +
+        '<line class="ct" x1="' + x(0) + '" y1="' + y(s.trend.from) + '" x2="' + x(n - 1) + '" y2="' + y(s.trend.to) + '"/>' +
+        '<polyline class="cl" points="' + d + '"/>' +
+        '<circle class="cd" cx="' + x(n - 1) + '" cy="' + y(s.points[n - 1].kg) + '" r="3.5"/>' +
+      '</svg>' +
+      '<div class="wdates"><span></span><span></span></div>';
+
+    var ds = box.querySelectorAll('.wdates span');
+    ds[0].textContent = s.points[0].date;
+    ds[1].textContent = s.points[n - 1].date;
+  }
+
+  document.getElementById('weightSeg').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-range]');
+    if (!btn) return;
+    weightRange = btn.getAttribute('data-range');
+    var btns = document.querySelectorAll('#weightSeg .seg-btn');
+    for (var wi = 0; wi < btns.length; wi++) btns[wi].setAttribute('aria-pressed', btns[wi] === btn ? 'true' : 'false');
+    renderWeightChart();
+  });
 
   function renderSettings() {
     var lw = latestWeight();
@@ -924,7 +961,11 @@
     flashMsg('Day moved.');
   });
 
-  document.getElementById('exportBtn').addEventListener('click', function() {
+  /* #exportBtn/#importBtn/#importArea/#ioHint/#resetBtn move to the Settings sheet in Task 6
+     (spec §11). Null-guarded rather than deleted, per Ruling 4, so this commit still boots with
+     the markup gone; Task 6 removes the guard when it re-adds the elements. */
+  var exportBtnEl = document.getElementById('exportBtn');
+  if (exportBtnEl) exportBtnEl.addEventListener('click', function() {
     var area = document.getElementById('importArea');
     var hint = document.getElementById('ioHint');
     area.style.display = 'block';
@@ -934,7 +975,8 @@
     catch (e) { hint.textContent = 'Select the text above and copy it manually.'; }
   });
 
-  document.getElementById('importBtn').addEventListener('click', function() {
+  var importBtnEl = document.getElementById('importBtn');
+  if (importBtnEl) importBtnEl.addEventListener('click', function() {
     var area = document.getElementById('importArea');
     var hint = document.getElementById('ioHint');
     if (area.style.display !== 'block' || !area.value.trim()) {
@@ -956,7 +998,8 @@
     } catch (e) { hint.textContent = 'Could not read that. Paste the whole backup text.'; }
   });
 
-  document.getElementById('resetBtn').addEventListener('click', function() {
+  var resetBtnEl = document.getElementById('resetBtn');
+  if (resetBtnEl) resetBtnEl.addEventListener('click', function() {
     if (!window.confirm('Erase all logged days? Your goals and API key are kept. This cannot be undone.')) return;
     cache = {};
     currentDate = todayStr();

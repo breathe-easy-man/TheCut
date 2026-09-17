@@ -114,13 +114,15 @@
   </div>
 
   <div class="page" id="page-progress">
+    <div class="card hero">
+      <div class="hero-label">Estimated fat lost</div>
+      <div class="hero-fig" id="goalNums"></div>
+      <div class="hero-bar-bg"><div class="hero-bar-fill" id="goalBar"></div></div>
+      <div class="hero-eta" id="goalEta"></div>
+      <div class="hero-note" id="pendingNote"></div>
+    </div>
+
     <div class="card">
-      <h3>Fat loss goal</h3>
-      <div class="bar-row">
-        <div class="bar-label"><span class="name">Estimated fat lost</span><span class="nums" id="goalNums"></span></div>
-        <div class="bar-bg"><div class="bar-fill goal" id="goalBar"></div></div>
-        <div class="remaining" id="goalEta"></div>
-      </div>
       <div class="steps-row">
         <label for="goalInput">Goal (kg of fat)</label>
         <input type="number" id="goalInput" step="0.5" inputmode="decimal">
@@ -135,39 +137,23 @@
         <div class="stat"><div class="big" id="statDeficit">0</div><div class="lbl">avg daily deficit</div></div>
         <div class="stat"><div class="big" id="statProtein">0g</div><div class="lbl">avg protein</div></div>
       </div>
-      <div class="hint" id="pendingNote"></div>
     </div>
 
     <div class="card">
       <h3>Weight</h3>
-      <div class="stat-grid">
-        <div class="stat"><div class="big" id="statWStart">-</div><div class="lbl">first logged</div></div>
-        <div class="stat"><div class="big" id="statWNow">-</div><div class="lbl">latest</div></div>
-        <div class="stat"><div class="big" id="statWDelta">-</div><div class="lbl">change</div></div>
+      <div class="seg-row" id="weightSeg">
+        <button type="button" class="seg-btn" data-range="7d" aria-pressed="false">7d</button>
+        <button type="button" class="seg-btn" data-range="30d" aria-pressed="true">30d</button>
+        <button type="button" class="seg-btn" data-range="all" aria-pressed="false">All</button>
       </div>
-      <div class="hint">Scale weight swings with water, food and glycogen. The two-week trend matters, not one day.</div>
+      <div id="weightChart" class="wchart-box"></div>
+      <div class="hint">Daily swings are water; the trend is what matters.</div>
     </div>
 
     <div class="card">
       <h3>Recent days</h3>
-      <table>
-        <thead><tr><th>Date</th><th class="num">Cal</th><th class="num">Target</th><th class="num">Diff</th><th class="num">Protein</th></tr></thead>
-        <tbody id="histBody"></tbody>
-      </table>
+      <div class="meals-list" id="histBody"></div>
       <div class="hint">Days not marked finished show as in progress and stay out of the averages.</div>
-    </div>
-
-    <div class="card">
-      <h3>Backup</h3>
-      <div class="io-row">
-        <button type="button" id="exportBtn">Copy my data</button>
-        <button type="button" id="importBtn">Restore data</button>
-      </div>
-      <textarea id="importArea" placeholder="Paste backup text here, then press Restore data again"></textarea>
-      <div class="hint" id="ioHint">Useful before clearing browser data or moving to another device.</div>
-      <div class="io-row" style="margin-top:10px;">
-        <button type="button" id="resetBtn" class="danger">Erase all logged days</button>
-      </div>
     </div>
   </div>
 

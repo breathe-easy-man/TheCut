@@ -311,32 +311,56 @@
   .stat-grid { display: flex; gap: 8px; }
   .stat { flex: 1; background: var(--surface-2); border-radius: 10px; padding: 10px; text-align: center; }
   .stat .big { font-size: 18px; font-weight: 700; }
-  .stat .lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th { text-align: left; color: var(--text-muted); font-weight: 600; padding: 6px 4px; border-bottom: 1px solid var(--border-soft); }
-  td { padding: 7px 4px; border-bottom: 1px solid var(--border-faint); }
-  td.num { text-align: right; }
-  .pos { color: var(--protein); }
-  .neg { color: var(--over); }
-  .pending { color: var(--pending); font-size: 11px; }
+  .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
   .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); font-size: 12px;
     padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; line-height: 1.4; }
   .ok { background: var(--ok-bg); border: 1px solid var(--ok-border); color: var(--ok-text); font-size: 12px;
     padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; }
 
-  .io-row { display: flex; gap: 8px; }
-  .io-row button {
-    flex: 1; padding: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
-    border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+  /* ---- Progress hero (§9) — the one card that is elevated rather than inverted, so a
+     near-black card still has an edge on a near-black page in dark mode. ---- */
+  .hero { background: var(--hero-bg); color: var(--hero-fg); }
+  .hero-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--hero-muted); }
+  .hero-fig { font-size: 40px; font-weight: 700; letter-spacing: -.03em; line-height: 1; margin: 8px 0 14px; }
+  .hero-bar-bg { height: 8px; border-radius: 6px; background: var(--border-faint); overflow: hidden; }
+  .hero-bar-fill { height: 100%; border-radius: 6px; background: var(--accent); width: 0%; }
+  .hero-eta { font-size: 13px; color: var(--hero-muted); margin-top: 10px; }
+  .hero-note { font-size: 12px; color: var(--hero-muted); margin-top: 6px; line-height: 1.4; }
+
+  /* ---- Weight card (§9) — segmented range control + inline SVG trend chart ---- */
+  /* Same equal-button row the training-schedule week uses; a segmented control is the same
+     component with different labels, so it shares the rule rather than duplicating it. */
+  .week, .seg-row { display: flex; gap: 6px; margin-top: 8px; }
+  .wday, .seg-btn {
+    flex: 1; padding: 10px 0; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--muted); font: inherit; font-size: 13px;
+    font-weight: 600; cursor: pointer;
   }
-  #importArea {
-    width: 100%; height: 90px; margin-top: 8px; padding: 8px; font-size: 11px;
-    border: 1px solid var(--border); border-radius: 8px; font-family: monospace;
-    display: none; background: var(--surface); color: var(--text);
+  .wday[aria-pressed="true"], .seg-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--ink-fill-fg); }
+  .wchart-box { margin-top: 10px; }
+  .wchart { display: block; width: 100%; height: auto; }
+  .wchart .cg { stroke: var(--border-faint); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .wchart .cl { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .wchart .ct { fill: none; stroke: var(--dim); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+  .wchart .cd { fill: var(--accent); stroke: none; }
+  .wdates { display: flex; justify-content: space-between; font-size: 11px; color: var(--dim); margin-top: 6px; }
+
+  /* ---- Recent days (§9) — list rows replacing the old table ---- */
+  .hist-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px; background: var(--surface); font-size: 13px; }
+  .hist-date { color: var(--text); }
+  .hist-chip {
+    margin-left: 6px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--accent-tint-fg); background: var(--accent-tint); border-radius: 999px; padding: 2px 6px;
   }
-  .danger { color: var(--danger); border-color: var(--danger-border) !important; }
+  .hist-nums { display: flex; align-items: baseline; gap: 8px; flex: none; }
+  .hist-cal { font-weight: 600; color: var(--text); }
+  .hist-target { color: var(--muted); font-weight: 400; }
+  .hist-delta { font-weight: 600; min-width: 40px; text-align: right; }
+  .hist-delta.hd-ok { color: var(--ok); }
+  .hist-delta.hd-over { color: var(--over); }
+  .hist-delta.hd-pending { color: var(--dim); }
+
   .move-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
   .move-row input { flex: 1; padding: 9px; border: 1px solid var(--border); border-radius: 8px;
     font-size: 13px; font-family: inherit; background: var(--surface); color: var(--text); }
